@@ -1,0 +1,234 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.poppins-thin {
+  font-family: "Poppins", serif;
+  font-weight: 100;
+  font-style: normal;
+}
+
+.poppins-extralight {
+  font-family: "Poppins", serif;
+  font-weight: 200;
+  font-style: normal;
+}
+
+.poppins-light {
+  font-family: "Poppins", serif;
+  font-weight: 300;
+  font-style: normal;
+}
+
+.poppins-regular {
+  font-family: "Poppins", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.poppins-medium {
+  font-family: "Poppins", serif;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.poppins-semibold {
+  font-family: "Poppins", serif;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.poppins-bold {
+  font-family: "Poppins", serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.poppins-extrabold {
+  font-family: "Poppins", serif;
+  font-weight: 800;
+  font-style: normal;
+}
+
+.poppins-black {
+  font-family: "Poppins", serif;
+  font-weight: 900;
+  font-style: normal;
+}
+
+.poppins-thin-italic {
+  font-family: "Poppins", serif;
+  font-weight: 100;
+  font-style: italic;
+}
+
+.poppins-extralight-italic {
+  font-family: "Poppins", serif;
+  font-weight: 200;
+  font-style: italic;
+}
+
+.poppins-light-italic {
+  font-family: "Poppins", serif;
+  font-weight: 300;
+  font-style: italic;
+}
+
+.poppins-regular-italic {
+  font-family: "Poppins", serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.poppins-medium-italic {
+  font-family: "Poppins", serif;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.poppins-semibold-italic {
+  font-family: "Poppins", serif;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.poppins-bold-italic {
+  font-family: "Poppins", serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.poppins-extrabold-italic {
+  font-family: "Poppins", serif;
+  font-weight: 800;
+  font-style: italic;
+}
+
+.poppins-black-italic {
+  font-family: "Poppins", serif;
+  font-weight: 900;
+  font-style: italic;
+}
+
+
+body {
+  margin:0px;
+  padding:0px;
+  width: 100%;
+  overflow-x: hidden;
+
+  font-family: "Poppins", serif;
+  /* font-weight: 600; */
+  font-style: normal;
+}
+
+* {
+  font-family: "Poppins", serif;
+  /* font-family: "DM Serif Text"; */
+  /* font-family: -apple-system,"system-ui",Segoe UI,roboto,helvetica,arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; */
+  /* font-weight: 600; */
+  font-style: normal;
+}
+
+.mapboxgl-map .mapboxgl-popup-content {
+  border-radius: 10px;
+  padding: 6px;
+}
+
+div.mapboxgl-popup {
+  max-width: 360px !important;
+  box-shadow: 0px 0px 0.5rem #bcbcbc;
+  border-radius: 5px;
+  background-color: rgb(255, 255, 255);
+}
+
+.mapboxgl-map .mapboxgl-popup-content .mapboxgl-popup-close-button {
+  display: block;
+  font-size: 20px;
+  color:#111;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top:5px;
+  right:5px;
+}
+
+.mapboxgl-map .mapboxgl-popup-tip {
+  display: none;
+}
+
+
+#range-slider .range-slider__range {
+  background: #ffbf00;
+  height: 10px;
+  transition: height .3s;
+}
+
+#range-slider .range-slider__thumb {
+  background: #faa307;
+  transition: transform .3s;
+}
+
+.radialRingWrapper {
+  width: 60px;
+  height: 60px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.radialRing{
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 0, 0, .4);
+  animation: radialPulse 2s infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes radialPulse {
+  0%{
+    transform: scale(.1);
+    opacity: 1;
+  }
+
+  100% {
+      transform: scale(1.5);
+      opacity: 0;
+  }
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888; 
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555; 
+}
+
+.stopover-marker {
+  width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--main-color);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, .5), 0 5px 10px 0 rgba(0, 0, 0, .75);
+    z-index: 20 !important;
+    transition: all var(--transition-3s) ease-in-out;
+}
