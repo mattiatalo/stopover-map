@@ -39,14 +39,15 @@ export async function getData() {
         });
     });
 
+    // ["institutions", "persons", "scientific_specimen", "documents"]
     // console.log(json_data['Persons']);
     return {
-        persons:[...json_data['Persons']].map(entry => ({...entry, stopover:entry['MAIN ENCOUNTER PLACE']})),
+        persons:[...json_data['Persons']].map(entry => ({...entry, stopover:entry['MAIN ENCOUNTER PLACE'], category:'persons'})),
         stopovers:[...json_data['Stopovers']],
         lists:[...json_data['Lists']],
-        scientific_specimen:[...json_data['Scientific specimens']].map(entry => ({...entry, stopover:entry['MAIN PLACE']})),
-        institutions:[...json_data['Institutions']].map(entry => ({...entry, stopover:entry['MAIN PLACE']})),
-        documents:[...json_data['Documents']].map(entry => ({...entry, stopover:entry['MAIN COLLECTION PLACE']})),
+        scientific_specimen:[...json_data['Scientific specimens']].map(entry => ({...entry, stopover:entry['MAIN PLACE'], category:'scientific_specimen'})),
+        institutions:[...json_data['Institutions']].map(entry => ({...entry, stopover:entry['MAIN PLACE'], category:'institutions'})),
+        documents:[...json_data['Documents']].map(entry => ({...entry, stopover:entry['MAIN COLLECTION PLACE'], category:'documents'})),
         selleny_works:[...json_data['Selleny works']],
     };
 

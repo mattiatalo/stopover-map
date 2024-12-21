@@ -44,7 +44,7 @@ const Grid = ({ data, columnNames, columnMapping, tableName, setActiveItem}) => 
     }, []);
 
     const handleRowClick = (event) => {
-        // console.log(event);
+        console.log(event);
         setActiveItem({ info:event.data, table:tableName});
     }
 

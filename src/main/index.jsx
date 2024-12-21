@@ -485,7 +485,7 @@ export default function MainPage() {
                             <Bird size={20} color="#4AB46C"/>
                         </div>
                         <div className="count flex flex-col items-center relative h-full">
-                            <span className="text-xs text-gray-500 font-semibold mb-[-5px]">Specimen</span>
+                            <span className="text-xs text-gray-500 font-semibold mb-[-5px]">Specimens</span>
                             <div className="text-xl font-bold text-gray-900 text-center w-full">
                             {
                                 activeStopOver ?
