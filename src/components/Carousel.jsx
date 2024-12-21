@@ -1,24 +1,32 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-const Carousel = ({ children: slides, autoSlide = false, autoSlideInterval = 3000 }) => {
-    const [curr, setCurr] = useState(0)
+const Carousel = ({ children: slides, autoSlide = false, autoSlideInterval = 3000, items }) => {
+    const [curr, setCurr] = useState(0);
 
-    const prev = () => setCurr((curr) => (curr === 0 ? slides.length - 1 : curr - 1))
+    const prev = useCallback(() => setCurr((curr) => (curr === 0 ? slides.length - 1 : curr - 1)),[slides])
 
-    const next = () => setCurr((curr) => (curr === slides.length - 1 ? 0 : curr + 1))
+    const next = useCallback(() => setCurr((curr) => (curr === slides.length - 1 ? 0 : curr + 1)),[slides])
 
     useEffect(() => {
         if (!autoSlide) return
         const slideInterval = setInterval(next, autoSlideInterval)
-        return () => clearInterval(slideInterval)
-    }, [])
+        return () => {
+            clearInterval(slideInterval);
+            setCurr(0);
+        }
+    }, [autoSlide, autoSlideInterval, next])
 
+    useEffect(() => {
+        // if(curr) {
+            setCurr(0);
+        // }
+    }, [items])
 
     return (
         <div className='overflow-hidden relative max-w-[350px]'>
-            <div className='flex transition-transform ease-out duration-500 w-auto p-0 mb-3' style={{ transform: `translateX(-${curr * 100}%)` }}>
+            <div className='flex transition-transform ease-out duration-500 w-auto p-0 mb-6' style={{ transform: `translateX(-${curr * 100}%)` }}>
                 {slides}
             </div>
 

@@ -132,7 +132,7 @@ body {
 
 .mapboxgl-map .mapboxgl-popup-content {
   border-radius: 10px;
-  padding: 6px;
+  padding: 0px;
 }
 
 div.mapboxgl-popup {
@@ -140,6 +140,10 @@ div.mapboxgl-popup {
   box-shadow: 0px 0px 0.5rem #bcbcbc;
   border-radius: 5px;
   background-color: rgb(255, 255, 255);
+}
+
+.mapboxgl-popup-content {
+  box-shadow: none;
 }
 
 .mapboxgl-map .mapboxgl-popup-content .mapboxgl-popup-close-button {

@@ -21,7 +21,7 @@ const ImageRenderer = (params) => {
             <img
                 alt={`${params.value} Flag`}
                 src={params.value}
-                className="logo"
+                className="logo object-fill h-12"
             />
         )}
     </span>)
@@ -31,13 +31,13 @@ const Grid = ({ data, columnNames, columnMapping, tableName, setActiveItem}) => 
     if(!data.length) {
         return;
     }
-    
+
     const colDefs = Object.keys(data[0]).filter(key => key && key !== "__EMPTY").reduce((a,b) => {
         a.push({ 
             field:b, 
             filter: b == "FEATURED IMAGE" ? false : true, 
             floatingFilter: true,
-            cellRenderer: b == "FEATURED IMAGE" ? ImageRenderer : ""
+            cellRenderer: ["FEATURED IMAGE", "IMAGE", "IMAGES"].includes(b) ? ImageRenderer : ""
         });
 
         return a;

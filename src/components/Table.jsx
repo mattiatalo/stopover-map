@@ -14,7 +14,7 @@ export default function Table({ data, columnNames, columnMapping, setActiveItem,
                         data.map((entry,i) => {
                             return <tr key={i} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 cursor-pointer hover:bg-gray-100" onClick={() => setActiveItem({ table:tableName, info:entry})}>
                                 { columnNames.map(field => (<td key={field.label} scope="col" className="px-2 py-3 text-xs">
-                                        {field.columns.map(col => (<span key={col}>{entry[col]}</span>))}
+                                        {field.columns.map(col => (entry[col] !== "N. A." ? <span key={col} className="mr-1">{entry[col]}</span> : ""))}
                                     </td>)) 
                                 }
                             </tr>

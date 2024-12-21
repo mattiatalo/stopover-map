@@ -14,8 +14,11 @@ export default forwardRef(function MainMap(props, ref) {
     <Map
       mapboxAccessToken={accessToken}
       initialViewState={{
-        longitude: 16.45,
-        latitude: 69.76,
+        // longitude: 16.45,
+        // latitude: 69.76,
+
+        latitude:31.2,
+        longitude:17.13,
         zoom: 2.4
       }}
       ref={ref}

@@ -6,6 +6,12 @@ export const columnNames = {
 }
 
 
-const VoyageColors = {
-    
+// [,,,,,,'#fdbf6f']
+export const VoyageColors = {
+    'Novara circumnavigation voyage':'#a6cee3', 
+    'Commodore Wüllerstorf-Urbair and staff in Canton':'#1f78b4', 
+    'Novara naturalists in Macao':'#b2df8a', 
+    "Hochstetter's New Zealand mission (8/01-2/10/1859)":'#33a02c', 
+    "Hochstetter's return journey (2/10/1859-9/01/1860)":'#fb9a99', 
+    "Scherzer's return journey (16/05-1/08/1859)":'#e31a1c'
 }

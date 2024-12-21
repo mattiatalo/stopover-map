@@ -11,7 +11,7 @@ export function SimpleNavbar() {
 
         <img 
           id="image-1886-385" alt="" 
-          src="https://globalsearoutes.net/wp-content/uploads/2022/08/logo-no-testo.png" 
+          src="/logo-no-testo.png" 
           className="ct-image w-10"
         />
 

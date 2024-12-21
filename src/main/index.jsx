@@ -7,7 +7,7 @@ import CollapsibleTab from '../components/CollapsibleTab';
 import { Bird, ChevronDown, ChevronUp, CircleDot, File, Files, Layers, ListCollapse, LucideGitGraph, School, User, Users, X } from 'lucide-react';
 
 import { Novara } from "./data";
-import { columnNames } from "../components/constants";
+import { columnNames, VoyageColors } from "../components/constants";
 
 // import RangeSlider from 'react-range-slider-input';
 // import 'react-range-slider-input/dist/style.css';
@@ -58,6 +58,8 @@ export default function MainPage() {
 
     const [ activeTable, setActiveTable ] = useState(null);
     const [ isSummaryClick, setIsSummaryClick] = useState(false);
+    const [ activeLink, setActiveLink] = useState("");
+
     const [activeStopoverTab, setActiveStopoverTab] = useState("list");
 
     const [dateFilter, setDateFilter] = useState({
@@ -209,7 +211,7 @@ export default function MainPage() {
     }, {});
 
     const tabClassName = `tab flex items-center px-1 font-semibold text-xs cursor-pointer hover:bg-gray-400 hover:text-white py-1`;
- 
+    console.log(activeLink);
     return (
         <MainLayout>
             <div className="map-container relative flex w-full">
@@ -247,6 +249,39 @@ export default function MainPage() {
                             items={allData.filter(entry => entry.stopover == activeStopOver['MAIN PLACE'])} 
                             setActiveItem={setActiveItem} 
                         /> : "" }
+
+                        {activeStopOver ? 
+                                <Popup
+                                    latitude={activeStopOver['COORDINATES'][0]} 
+                                    longitude={activeStopOver['COORDINATES'][1]} 
+                                    offset={[15,15]} anchor="left" 
+                                    closeOnMove={false}
+                                    className="px-1 max-w-[300px] py-1"
+                                >
+                                    <div className="w-auto">
+                                    <div className="flex items-cente gap-3 min-h-[100px]">
+                                        <div className={`relative bg-gray-300 rounded-md min-w-[90px] h-inherit overflow-hidden`}>
+                                            {/* <div className="h-full bg-orange w-full object-cover" style={{ backgroundImage:`url(${activeEntry['IMAGES']})`}}></div> */}
+                                        {activeStopOver['IMAGES'] && <img src={activeStopOver['IMAGES']} alt="" className='object-fill h-full w-[90px]' />}
+                                        </div>
+                        
+                                        <div className=''>
+                                        <div className="fontsemibold">{activeStopOver['MAIN PLACE']} ({activeStopOver['STOPOVER']})</div>
+                                        <div className="text-gray-400 flex">
+                                            Date: {activeStopOver['DEPARTURE DAY']} - {activeStopOver['ARRIVAL DAY']}
+                                        </div>
+
+                                        <div className="px-0">
+                                            Duration: {activeStopOver['DURATION (days)']}
+                                        </div>
+
+                                        <div className="icon-box shadow-md p-2 rounded-md mt-1" style={{ backgroundColor:(VoyageColors[activeStopOver['VOYAGE VARIANTS']] || "gray")}}>
+                                            <p className='span-1'>{activeStopOver['VOYAGE VARIANTS']}</p>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </Popup> : ""}
                     </MainMap>
                 </div>
 
@@ -520,9 +555,13 @@ export default function MainPage() {
                {
                 activeItem ? (activeItem && activeItem.table == "scientific_specimen") ? 
                     <ScientificCollectionModal popupInfo={activeItem.info} setActiveItem={setActiveItem} /> : 
-                    <ActiveItemInfoModal popupInfo={activeItem.info} setActiveItem={setActiveItem} /> : ""
+                    <ActiveItemInfoModal popupInfo={activeItem.info} setActiveItem={setActiveItem} setActiveLink={setActiveLink}/> : ""
                 }
             </div>
+
+            {activeLink ? <Modal activeTab={activeLink} isOpen={true} toggleActiveTable={setActiveLink}>
+                <iframe src={activeLink} frameBorder="0" width={"100%"} height={"100%"}></iframe>
+            </Modal> : ""}
         </MainLayout>
     )
 }
@@ -532,9 +571,12 @@ const Accordion = ({title, children}) => {
 
     return(
         <div className='accordion'>
-            <button className='w-full flex justify-between bg-gray-0 p-2 rounded-md px-4' onClick={() => setIsOpen(!isOpen)}>
+            <button className='w-full flex justify-between bg-gray-0 p-2 rounded-md px-4 relative ml-6 w-[90%]' onClick={() => setIsOpen(!isOpen)}>
                 {title}
                 { isOpen ? <ChevronDown /> : <ChevronUp /> }
+
+                <span className="absolute left-[-1px] top-[-5px]  h-[65%] bg-gray-500/50 w-[2px]"></span>
+                <span className="absolute left-[-1px] top-5 bottom-0 h-[60%] bg-gray-500/50 w-[2px]"></span>
             </button>
 
             <div className={`${isOpen ? 'block' : 'hidden'} bg-gray-200/20`}>
@@ -556,11 +598,12 @@ const StopOverCard = ({stopOver, onClick, activeStopOver}) => {
                 >
                     <div className={`${activeStopOver && activeStopOver['STOPOVER'] == stopOver['STOPOVER'] ? 'bg-green-800' : 'bg-gray-500'}  w-1 h-1 rounded-full`}></div>
                 </div>
-                <span className="absolute top-[-2px]  h-[50%] bg-gray-500/50 w-[2px]"></span>
-                <span className="absolute top-5 bottom-0 h-[50%] bg-gray-500/50 w-[2px]"></span>
+                <span className="absolute top-[-5px]  h-[75%] bg-gray-500/50 w-[2px]"></span>
+                <span className="absolute top-5 bottom-0 h-[80%] bg-gray-500/50 w-[2px]"></span>
             </div>
             <div className="border-b border-gray-300 w-full text-left px-3 py-3">
                 {stopOver['MAIN PLACE']} ({stopOver['STOPOVER']})
+                {stopOver['ARRIVAL DAY'] && stopOver['ARRIVAL DAY'] !== "N.A." ? <div className='text-[11px] text-gray-400'>{stopOver['ARRIVAL DAY']}</div> : ""}
             </div>                  
         </li>
     )
@@ -572,7 +615,7 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
     return (
         <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-5 h-[80vh] right-0 top-10 rounded-xl shadow-lg border-[4px] border-[#AD9A6D] overflow-hidden">
             <div className="max-h-full h-full text-[#54595f] overflow-y-auto overflow-x-hidden bg-[#F8F1E5] ">
-                <button className="absolute right-6 top-4 cursor-pointer rounded-full border-[2px] p-1 bg-black text-white" onClick={() => setActiveStopOver()}>
+                <button className="absolute right-6 top-4 cursor-pointer rounded-full border-[#E9E4D8] border-[5px] p-1 bg-[#AD9A6D] text-[#E9E4D8]" onClick={() => setActiveStopOver()}>
                     <X size={22}/>
                 </button>
 
@@ -586,7 +629,7 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
                             {
                             ['persons',  'institutions', 'scientific_specimen', 'documents'].map(tableName => {
                                 return  (
-                                <li key={tableName} className="mx-0" role="presentation">
+                                <li key={tableName} className="mx-0 px-1" role="presentation">
                                     <button 
                                         onClick={() => setActiveTab(tableName)} 
                                         className={`${tableName == activeTab ? 'text-[#191919] border-[#191919] bg-[#AD9A6D]' : ''} capitalize inline-block py-3 px-1 border-b-2`}
@@ -630,11 +673,11 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
 const ScientificCollectionModal = ({ popupInfo, setActiveItem }) => {
     console.log(popupInfo)
     return (
-      <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-5 h-[80vh] right-0 top-10 rounded-xl shadow-lg border-[4px] border-[#AD9A6D]">
+      <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-5  h-[68vh] right-0 top-[155px] rounded-xl shadow-lg border-[4px] border-[#AD9A6D]">
             <div className="flex w-full px-[2%] py-5 max-h-full space-x-2 text-[#54595f] overflow-y-auto overflow-x-hidden ">
   
-              <button className="absolute right-6 top-2 cursor-pointer rounded-full border-[2px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
-                <X size={22}/>
+              <button className="absolute right-6 top-2 cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
+                <X size={22} className='font-bold'/>
               </button>
   
               <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
@@ -747,9 +790,9 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem }) => {
     )
 }
 
-const ActiveItemInfoModal = ({ popupInfo, setActiveItem }) => {
+const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink }) => {
     console.log(popupInfo);
-
+    
     let colors = {
         "stopovers":"red",
         "persons":"orange",
@@ -769,23 +812,35 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem }) => {
             "MAIN ENCOUNTER PLACE", "SECONDARY ENCOUNTER PLACE", "ENCOUNTER DATE", 
         ]
     }
+
+    const onLinkClick = (e) => {
+        e.preventDefault();
+        console.log(e.target);
+        setActiveLink(e.target.href);
+    }
+
+    const description = (popupInfo['FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ROLE DESCRIPTION'] || popupInfo['DESCRIPTION'] || "");
+    let personsName = "";
+    popupInfo['FIRST NAME'] == "N. A." ? "" : personsName += popupInfo['FIRST NAME'];
+    popupInfo['LAST NAME'] == "N. A." ? "" : personsName += popupInfo['LAST NAME'];
+
     return (
-      <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-5 h-[80vh] right-0 top-10 rounded-xl shadow-lg border-[4px] border-[#AD9A6D]">
+      <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-5 h-[68vh] right-0 top-[155px] rounded-xl shadow-lg border-[4px] border-[#AD9A6D]">
             <div className="flex w-full px-[2%] py-5 max-h-full space-x-2 text-[#54595f] overflow-y-auto overflow-x-hidden ">
   
-              <button className="absolute right-6 top-2 cursor-pointer rounded-full border-[2px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
-                <X size={22}/>
+              <button className="absolute right-6 top-2 cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
+                <X size={22} className='font-bold text-white'/>
               </button>
   
               <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
-                <div className="shadow-md rounded-full mb-4 border-[1px] px-5 w-fit min-w-20 border-black text- text-center uppercase" style={{ backgroundColor: colors[popupInfo.category]}}>
+                <div className="shadow-md rounded-full mb-4 border-[1px] px-5 w-fit min-w-20 border-black text- text-center uppercase" style={{ borderColor: colors[popupInfo.category]}}>
                   <span className="font-semibold" >{popupInfo.category}</span>
                 </div>
   
                 <div className="content h-full">
                   <div className="header-section flex flex-col">
                     <h2 className="text-[#363636] text-[1.5em]">
-                        <strong>{popupInfo['NAME'] || popupInfo['TITLE / NAME'] || (`${popupInfo['FIRST NAME'] ? (popupInfo['FIRST NAME'] + " " + popupInfo['LAST NAME']) : "" }`) || popupInfo['INSTITUTION NAME']}</strong>
+                        <strong>{popupInfo['NAME'] || popupInfo['TITLE / NAME'] || (`${popupInfo['FIRST NAME'] ? personsName : "" }`) || popupInfo['INSTITUTION NAME']}</strong>
                     {/* </h2> */}
   
                     {/* <h3 className="ct-headline text-[#363636] mb-2 text-[1.3em] py-0"> */}
@@ -809,11 +864,12 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem }) => {
                     </h3> */}
   
                   </div>
-  
+                    
+
                   <div className="body-section">
                     <div className="description my-[25px] text-[14px] text-gray-700">
                       <div>
-                        {(popupInfo['FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ROLE DESCRIPTION'] || popupInfo['DESCRIPTION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
+                        {(description && description !== "N. A.") ? description.split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>)) : ""}
                       </div>
                     </div>
 
@@ -829,7 +885,7 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem }) => {
                            fields[popupInfo.category].map((field,i) => {
         
                                 return (
-                                popupInfo[field] ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
+                                (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
                                     <h4 className="text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{field.toLocaleLowerCase()}</h4>
                                     <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[field] || "N.A"}</h5>
                                 </div> : ""
@@ -847,7 +903,7 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem }) => {
                         </div> */}
                     </div>
 
-                    { popupInfo['QUOTATION'] ? <div className="description my-[25px] text-[14px] text-gray-700">
+                    { (popupInfo['QUOTATION'] && popupInfo['QUOTATION'] !== "N. A.") ? <div className="description my-[25px] text-[14px] text-gray-700">
                         <h3 className="text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">Quotation</h3>
                       <div>
                         {(popupInfo['QUOTATION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
@@ -856,7 +912,7 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem }) => {
                       <hr className='my-3 border-black'/>
                     </div> : "" }
                     
-                    {popupInfo['ROLE DESCRIPTION'] ? <div className="description my-[25px] text-[14px] text-gray-700">
+                    {(popupInfo['ROLE DESCRIPTION'] && popupInfo['ROLE DESCRIPTION'] !== "N. A.") ? <div className="description my-[25px] text-[14px] text-gray-700">
                         <h3 className="text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">Role Description</h3>
                         <div>
                             {(popupInfo['ROLE DESCRIPTION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
@@ -864,28 +920,35 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem }) => {
                         <hr className='my-3 border-black'/>
                     </div> : ""}
   
+                    {(popupInfo['REFERENCES'] || "") ?
+                    <>
                     <h3 className="text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">References</h3>
                     <div className="mt-[2px] mb-[25px] text-[14px] text-gray-700">
                         {(popupInfo['REFERENCES'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
                     </div>
 
-                    <hr className='my-3 border-black'/>
-  
+                    <hr className='my-3 border-black'/> </>
+                    : ""}
+                        
+                    {(popupInfo['LINKS'] || popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "") ? 
+                    <>
                     <h3 className="text-[18px] text-[#ad9a6d] font-semibold">Links</h3>
                     <div className="pb-5 text-[14px] text-gray-700">
   
                       {
                         (popupInfo['LINKS'] || popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "").split("\n").map((link,i) => (
-                          <a className="my-3" href={link} key={`${link}-${i}`}>
-                            <span className="underline">{link}</span>
+                          <a className="my-3" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
+                            <span className="underline pointer-events-none">{link}</span>
                           </a>
                         ))
                       }
                      
   
-                    </div>
-
+                    </div> 
                     <hr className='my-3 border-black'/>
+                    </> : ""}
+
+                   
   
                   </div>
                 </div>
@@ -898,8 +961,8 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem }) => {
 
 
 const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver }) => {
-    const [activeEntry, setActiveEntry] = useState(activeStopOver);
-  
+    const [activeEntry, setActiveEntry] = useState(null);
+    console.log(activeEntry);
     return(
       <>
         {stopovers.map((stopover,i) => {
@@ -910,39 +973,34 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver }) => {
             onClick={() => handelClick(stopover)}
           >
             <div 
-            //   onMouseLeave={() => setActiveEntry(null) }
-                onClick={() => setActiveEntry(stopover)}
+                onMouseLeave={() => setActiveEntry(null) }
                 onMouseOver={() => setActiveEntry(stopover)}
-                className="rounded-full bg-red-500 flex shadow-round p-[1px] align-center justify-center stopver-marker"
+                className="rounded-full bg-red-500 flex shadow-round p-[1px] align-center justify-center stopver-marker z-10"
             >
               <CircleDot size={10} className='bg-red-500/0 'opacity={0}/>
             </div>
 
-            { (activeStopOver && activeStopOver['STOPOVER'] == stopover['STOPOVER']) ? <div className="radialRingWrapper">
+            { (activeStopOver && activeStopOver['STOPOVER'] == stopover['STOPOVER']) ? <div className="radialRingWrapper z-4" onClick={() => handelClick(stopover)}>
                 <div className="radialRing"></div>
             </div> : "" }
           </Marker>
         }) }
-        {activeEntry && 
+        {activeEntry ? 
           <Popup
             latitude={activeEntry['COORDINATES'][0]} 
             longitude={activeEntry['COORDINATES'][1]} 
             offset={[15,15]} anchor="left" 
-            focusAfterOpen={false}
-            className="px-2 max-w-[300px]"
+            closeOnMove={false}
+            className="px-1 max-w-[300px] py-1"
           >
-            <div className="px-2 w-auto">
-  
-              <div className="flex items-center">
-                <div className="flex items-center flex-col relative h-full py-3 bg-gray-300 rounded-m min-w-[90px] h-auto h-[70px]">
-                  {activeEntry['IMAGES'] && <img src={activeEntry['IMAGES']} alt="" className='rounded-md min-h-[70px]' />}
+            <div className="w-auto">
+              <div className="flex items-cente gap-3 min-h-[100px]">
+                <div className={`relative bg-gray-300 rounded-md min-w-[90px] h-inherit overflow-hidden`}>
+                    {/* <div className="h-full bg-orange w-full object-cover" style={{ backgroundImage:`url(${activeEntry['IMAGES']})`}}></div> */}
+                  {activeEntry['IMAGES'] && <img src={activeEntry['IMAGES']} alt="" className='object-fill h-full w-[90px]' />}
                 </div>
   
-                <div className='px-3 my-2'>
-                    {/* <div className={'bg-green-800/20 flex items-center justify-center rounded-full h-5 w-5 mr-2'}>
-                        <div className={'bg-green-800 w-1 h-1 rounded-full'}></div>
-                    </div> */}
-
+                <div className=''>
                   <div className="fontsemibold">{activeEntry['MAIN PLACE']} ({activeEntry['STOPOVER']})</div>
                   <div className="text-gray-400 flex">
                     Date: {activeEntry['DEPARTURE DAY']} - {activeEntry['ARRIVAL DAY']}
@@ -952,13 +1010,13 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver }) => {
                     Duration: {activeEntry['DURATION (days)']}
                   </div>
 
-                  <div className="icon-box bg-[#E6FFF9] shadow-md p-2">
-                    <p className='span'>{activeEntry['VOYAGE VARIANTS']}</p>
+                  <div className="icon-box shadow-md p-2 rounded-md mt-1" style={{ backgroundColor:(VoyageColors[activeEntry['VOYAGE VARIANTS']] || "gray")}}>
+                    <p className='span-1'>{activeEntry['VOYAGE VARIANTS']}</p>
                   </div>
                 </div>
               </div>
             </div>
-          </Popup>
+          </Popup> : ""
         }
       </>
     )
@@ -1031,40 +1089,46 @@ const Markers = ({ items, setActiveItem}) => {
     }
 
     
-
+    console.log(popupInfo);
     return(
         <>
-            {popupInfo && (
-                    <Popup
+            {(popupInfo && popupInfo.length) ? (
+                <Popup
                     longitude={popupInfo[0]['COORDINATES'][1]}
                     latitude={popupInfo[0]['COORDINATES'][0]}
                     offset={[25,-15]}
                     anchor="left"
                     onClose={() => {setPopupInfo(null); setActiveItem(null)}}
                     className="overflow-x-hidden"
-                    >
-                    <Carousel >
+                >
+                    <Carousel items={popupInfo}>
                         {popupInfo.map((info,i) => (
-                        <div className="popup-content min-w-full bg-red-0 mb-4 relative min-w-[300px]" key={i}>
-                            <span style={{ backgroundColor:colors[info.category]}} className="absolute right-8 top-0 text-[#fff] text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300">
-                                {info['category']}
-                            </span>
-                            <div className="px-3 h-0 w-12"></div>
+                        <div className="popup-content min-w-full bg-red-0 relative min-w-[300px] p-0" key={i}>
+                           
+                            <div className="h-0 w-12"></div>
                                 
-                                <div className="p-2">
-                                <h5 className="text-[#111] text-lg font-medium py-1 mt-2">
-                                    {info['NAME'] || info['TITLE / NAME'] || info['FIRST NAME'] || info['INSTITUTION NAME']}
-                                </h5>
+                                <div className="p-3">
+
+                                    <div className="flex justify-between items-center">
+                                        <h5 className="text-[#111] text-lg font-medium capitalize">
+                                            {info['NAME'] || info['TITLE / NAME'] || info['FIRST NAME'] || info['INSTITUTION NAME']}
+                                        </h5>
+
+                                        <span style={{ backgroundColor:colors[info.category]}} className=" flex items-center h-5 mr-5 text-[#fff] text-xs font-medium px-2.5 rounded dark:bg-gray-700 dark:text-gray-300">
+                                            {info['category']}
+                                        </span>
+                                    </div>
+                                    
 
                                 <div className="popup-content_inner">
-                                    <div className="flex">
+                                    <div className="flex gap-3">
                                     {/* <div className="text-gray-400">ID {popupInfo['ID']} - Persons</div> */}
-                                        <div className="flex items-center flex-col relative py-1 bg-gray-300 rounded-md min-w-[90px] h-[70px] mr-2">
-                                            {info['FEATURED IMAGE'] && <img src={info['FEATURED IMAGE']} alt="" className='rounded-md w-[90px] object-contain' />}
-                                            {info['IMAGE'] && <img src={info['IMAGE']} alt="" className='rounded-md w-[90px] object-contain' />}
+                                        <div className="relative bg-gray-300 rounded-md min-w-[90px] w-[90px] h-inherit overflow-hidden">
+                                            {info['FEATURED IMAGE'] && <img src={info['FEATURED IMAGE']} alt="" className='rounded-md w-[90px] object-cover h-full' />}
+                                            {info['IMAGE'] && <img src={info['IMAGE']} alt="" className='rounded-md w-full object-cover h-full' />}
                                         </div>
                                    
-                                        <div className=''>
+                                        <div className='flex-1'>
                                             {
                                             categoryFields[info.category].map(field => (<div key={field.field} className="flex flex">
                                                 <div className="mr-1">{field.label}: </div>
@@ -1076,7 +1140,7 @@ const Markers = ({ items, setActiveItem}) => {
                                     </div>
                                     
 
-                                    <div className="w-full flex items-center justify-center mt-2">
+                                    <div className="w-full flex justify-end mt-2 mb-1">
                                         <button className="bg-[#AD9A6D] text-white px-3 py-1 rounded-md" onClick={() => setActiveItem({ info:info, table:info.category })}>More Info</button>
                                     </div>
                                 </div>
@@ -1084,7 +1148,7 @@ const Markers = ({ items, setActiveItem}) => {
                             </div>
                         ))}
                         </Carousel>
-                    </Popup>)
+                    </Popup> ): ""
                 }
             {items.filter(document => document['COORDINATES'] && document['COORDINATES'].length == 2)
             .filter(document => !document['COORDINATES'].includes("NaN"))
