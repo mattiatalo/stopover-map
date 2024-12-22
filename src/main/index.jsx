@@ -168,7 +168,10 @@ export default function MainPage() {
     let targetStopOvers = useMemo(() => {
         console.log(state.query);
         return state.query ?
-            stopovers.filter(stopover => stopover['STOPOVER'].toLocaleLowerCase().includes(state.query.toLocaleLowerCase())) :
+            stopovers.filter(stopover => (
+                stopover['STOPOVER'].toLocaleLowerCase().includes(state.query.toLocaleLowerCase()) ||
+                stopover['MAIN PLACE'].toLocaleLowerCase().includes(state.query.toLocaleLowerCase())
+            )) :
             stopovers;
     }, [state.query, stopovers]);
 
@@ -268,7 +271,7 @@ export default function MainPage() {
                                         <div className=''>
                                         <div className="fontsemibold">{activeStopOver['MAIN PLACE']} ({activeStopOver['STOPOVER']})</div>
                                         <div className="text-gray-400 flex">
-                                            Date: {activeStopOver['DEPARTURE DAY']} - {activeStopOver['ARRIVAL DAY']}
+                                            Date: {activeStopOver['ARRIVAL DAY']} - {activeStopOver['DEPARTURE DAY']}
                                         </div>
 
                                         <div className="px-0">
@@ -332,7 +335,7 @@ export default function MainPage() {
                         {
                             [...stopovers]
                                 .filter(stopover => stopover['ARRIVAL DAY'] !== "N.A.")
-                                .sort((a,b) => dayjs(b['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix() - dayjs(a['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix())
+                                .sort((a,b) => dayjs(a['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix() - dayjs(b['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix())
                                 .filter(filterByDateRange)
                                 .map((stopover,i) => (
                                     <div key={i} className='cursor-pointer text-white text-sm bg-white w-full relative' onClick={() => handleStopoverClick(stopover)}>
@@ -554,7 +557,7 @@ export default function MainPage() {
 
                {
                 activeItem ? (activeItem && activeItem.table == "scientific_specimen") ? 
-                    <ScientificCollectionModal popupInfo={activeItem.info} setActiveItem={setActiveItem} /> : 
+                    <ScientificCollectionModal popupInfo={activeItem.info} setActiveItem={setActiveItem} setActiveLink={setActiveLink}/> : 
                     <ActiveItemInfoModal popupInfo={activeItem.info} setActiveItem={setActiveItem} setActiveLink={setActiveLink}/> : ""
                 }
             </div>
@@ -640,7 +643,7 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
                                         aria-controls="profile" 
                                         aria-selected="true"
                                     >
-                                        {tableName.split("_").join(" ")}
+                                        {tableName.includes("specimen") ? "Specimens" : tableName.split("_").join(" ")}
                                     </button>
                                 </li>
                                 )
@@ -670,8 +673,14 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
     )
 }
 
-const ScientificCollectionModal = ({ popupInfo, setActiveItem }) => {
+const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink }) => {
     console.log(popupInfo)
+
+    const onLinkClick = (e) => {
+        e.preventDefault();
+        setActiveLink(e.target.href);
+    }
+
     return (
       <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-5  h-[68vh] right-0 top-[155px] rounded-xl shadow-lg border-[4px] border-[#AD9A6D]">
             <div className="flex w-full px-[2%] py-5 max-h-full space-x-2 text-[#54595f] overflow-y-auto overflow-x-hidden ">
@@ -723,9 +732,9 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem }) => {
   
                   <div className="body-section">
                     <div className="description my-[25px] text-[14px] text-gray-700">
-                      <p>
+                      <div>
                         {popupInfo['FROM THE SCIENTIFIC VOLUMES'].split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
-                      </p>
+                      </div>
                     </div>
 
                     
@@ -770,8 +779,8 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem }) => {
   
                       {
                         popupInfo['LINKS'].split("\n").map((link,i) => (
-                          <a className="my-3" href={link} key={`${link}-${i}`}>
-                            <span className="underline">{link}</span>
+                          <a className="my-3" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
+                            <span className="underline pointer-events-none">{link}</span>
                           </a>
                         ))
                       }
@@ -815,14 +824,13 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink }) => {
 
     const onLinkClick = (e) => {
         e.preventDefault();
-        console.log(e.target);
         setActiveLink(e.target.href);
     }
 
     const description = (popupInfo['FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ROLE DESCRIPTION'] || popupInfo['DESCRIPTION'] || "");
     let personsName = "";
     popupInfo['FIRST NAME'] == "N. A." ? "" : personsName += popupInfo['FIRST NAME'];
-    popupInfo['LAST NAME'] == "N. A." ? "" : personsName += popupInfo['LAST NAME'];
+    popupInfo['LAST NAME'] == "N. A." ? "" : personsName += " " + popupInfo['LAST NAME'];
 
     return (
       <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-5 h-[68vh] right-0 top-[155px] rounded-xl shadow-lg border-[4px] border-[#AD9A6D]">
