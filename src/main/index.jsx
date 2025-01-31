@@ -1,12 +1,13 @@
 /* eslint-disable react/prop-types */
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import MainLayout from './MainLayout';
 import MainMap from './MainMap';
 import { getData } from '../services/data';
 import CollapsibleTab from '../components/CollapsibleTab';
-import { Bird, ChevronDown, ChevronUp, CircleDot, File, Files, Layers, ListCollapse, LucideGitGraph, School, User, Users, X } from 'lucide-react';
+import { Bird, ChevronDown, ChevronUp, CircleDot, File, Files, Layers, LucideGitGraph, School, Users, X } from 'lucide-react';
 
-import { Novara } from "./data";
+// import { Novara } from "./data";
+import {Route  as Novara} from "./route";
 import { columnNames, VoyageColors } from "../components/constants";
 
 // import RangeSlider from 'react-range-slider-input';
@@ -14,7 +15,6 @@ import { columnNames, VoyageColors } from "../components/constants";
 
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
-
 
 import { Layer, Marker, Popup, Source } from 'react-map-gl';
 import { useDebounce } from 'use-debounce';
@@ -24,6 +24,10 @@ import Grid from '../components/Grid';
 import Modal from '../components/Modal';
 import Table from '../components/Table';
 import Carousel from '../components/Carousel';
+import { useLocalization, useTranslation } from '../components/LocalizationProvider';
+import ImageViewer from '../components/ImageViewer';
+import { RiArrowDownLine, RiArrowDownSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';
+import Charts from './charts';
 
 dayjs.extend(customParseFormat);
 
@@ -40,7 +44,7 @@ const sliderValuesToDates = (values) => {
     let minYear = 1856;
 
     let date = new Date(`${minYear}`).valueOf();
-    console.log(date);
+    // console.log(date);
     let minDate = new Date(date + 1317600000 * min);
     let maxDate = new Date(date + 1317600000 * max);
 
@@ -50,15 +54,28 @@ const sliderValuesToDates = (values) => {
     return [minDate, maxDate]
 }
 
+console.log(Novara);
 export default function MainPage() {
     const [isLoaded, setIsLoadied] = useState(false)
     const [ activeStopOver, setActiveStopOver ] = useState(null);
-    const [activeTab, setActiveTab] = useState(null);
+    const [ activeTab, setActiveTab] = useState(null);
+    const [ activeView, setActiveView] = useState("table");
+    const [ hoverItem, setHoverItem] = useState(null);
     const [ activeItem, setActiveItem] = useState(null);
+
+    const [ isLayerTabOpen, setLayerTabOpen] = useState(false);
+    const [ activeLayers, setActiveLayers ] = useState(["institutions", "persons", "scientific_specimen", "documents"]);
+    const [ activeImage, setActiveImage] = useState(null);
 
     const [ activeTable, setActiveTable ] = useState(null);
     const [ isSummaryClick, setIsSummaryClick] = useState(false);
     const [ activeLink, setActiveLink] = useState("");
+    const [downloadProgress, setDownloadProgress] = useState(0);
+    const [isDataLoading, setIsDataLoading ] = useState(false);
+    const [showSpline, setShowSpline] = useState(false);
+
+    const { language } = useLocalization();
+    const t = useTranslation();
 
     const [activeStopoverTab, setActiveStopoverTab] = useState("list");
 
@@ -93,11 +110,25 @@ export default function MainPage() {
     
         // update the stopover
         setActiveStopOver(stopOver);
-        setActiveTab("persons");
+        setActiveTab("stopovers");
+        setActiveItem("");
+        setActiveLink("");
+        setLayerTabOpen(false);
+    }
+
+    const updateDownloadProgress = ({ loaded, total}) => {
+        if(loaded && total) {
+            // if(downloadProgress < (loaded * 100/total).toFixed(1)) {
+                setDownloadProgress((loaded * 100/total).toFixed(1));
+            // }
+            
+        }
+        
     }
 
     const loadData = useCallback(async () => {
-        let data = await getData();
+        setIsDataLoading(true);
+        let data = await getData(updateDownloadProgress);
         let resources = ["institutions", "persons", "scientific_specimen", "documents"];
         let allData = [];
 
@@ -108,8 +139,11 @@ export default function MainPage() {
             allData = [...allData, ...info];
         });
 
+        allData = allData.map((entry, i) => ({id:i, ...entry}));
+
         setState((prevState) => ({...prevState, ...data, allData }));
-    
+        
+        setIsDataLoading(false);
         setIsLoadied(true);
       }, [setIsLoadied]);
     
@@ -133,7 +167,7 @@ export default function MainPage() {
     }
 
     const getActiveTableInfo = (tableName) => {
-        console.log(activeStopOver);
+        // console.log(activeStopOver);
 
         switch(tableName) {
           case 'persons':
@@ -166,7 +200,6 @@ export default function MainPage() {
     }, [stopovers]);
 
     let targetStopOvers = useMemo(() => {
-        console.log(state.query);
         return state.query ?
             stopovers.filter(stopover => (
                 stopover['STOPOVER'].toLocaleLowerCase().includes(state.query.toLocaleLowerCase()) ||
@@ -178,6 +211,14 @@ export default function MainPage() {
     // if(activeVoyage) {
         targetStopOvers = useMemo(() => (!activeVoyage ?  targetStopOvers : targetStopOvers.filter(stopover => stopover['VOYAGE VARIANTS'] == activeVoyage)), [activeVoyage, targetStopOvers]);
     // }
+    
+    const toggleActiveLayers = (e) => {
+        let { name, checked} = e.target;
+        let layers = [...activeLayers];
+        layers = checked ? [...layers, name] : layers.filter(layer => layer !== name);
+
+        setActiveLayers(layers);
+    }
 
     const toggleActiveTable = (tableName) => {
         if(activeTable == tableName) {
@@ -191,6 +232,9 @@ export default function MainPage() {
 
     const resetMap = () => {
         setActiveStopOver(null);
+        setLayerTabOpen(false);
+        setActiveImage(null);
+        setActiveItem(null);
     
         mapRef.current.flyTo({
           center:[16.45, 39.76],
@@ -214,18 +258,31 @@ export default function MainPage() {
     }, {});
 
     const tabClassName = `tab flex items-center px-1 font-semibold text-xs cursor-pointer hover:bg-gray-400 hover:text-white py-1`;
-    console.log(activeLink);
+    
     return (
         <MainLayout>
+            { isDataLoading && <div className='absolute z-[60] top-0 left-0 w-full bg-black/80 h-full flex items-center justify-center'>
+                <div className=" bg-white p-2 rounded-md flex flex flex-col items-center">
+
+                    <div className="loading-bar-background">
+                        <div className="loading-bar" style={{ width: `${downloadProgress}%`}}></div>
+                    </div>
+
+                    Loading....
+                </div>    
+            </div>}
+             {activeImage && <ImageViewer imageUrl={activeImage} alt="" className='rounded-md w-full object-cover h-full' showImage={false} onClose={() => setActiveImage(null)} />}
             <div className="map-container relative flex w-full">
-                { activeStopOver ? <nav className="flex w-full absolute top-0 left-0 z-30 bg-white p-1 items-center justify-center" aria-label="Breadcrumb">
-                    <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
+           
+
+            { activeStopOver ? <nav className="flex w-full absolute top-0 left-0 z-10 bg-white items-center justify-center" aria-label="Breadcrumb">
+                 <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse p-2">
                         <li className="inline-flex items-center">
-                            <a href="#" onClick={resetMap} className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+                            <a href="#" onClick={resetMap} className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dak:text-gray-400 dak:hover:text-white">
                                 <svg className="w-3 h-3 me-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z"/>
                                 </svg>
-                                Globe
+                                {t('globe')}
                             </a>
                         </li>
                         <li>
@@ -233,23 +290,59 @@ export default function MainPage() {
                                 <svg className="rtl:rotate-180 w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
                                 </svg>
-                                <a href="#" className="ms-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ms-2 dark:text-gray-400 dark:hover:text-white">
-                                    {activeStopOver['MAIN PLACE']} ({activeStopOver['STOPOVER']})
+                                <a href="#" className="ms-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ms-2 dak:text-gray-400 dak:hover:text-white">
+                                    {activeStopOver['MAIN PLACE']} <span className='text-red-300'>({activeStopOver['STOPOVER']})</span>
                                 </a>
                             </div>
                         </li>
                     </ol>
+
+                    <div className='toggler relative mx-5'>
+                        <div className='flex cursor-pointer hover:bg-gray-100 focus:bg-gray-100 px-2 rounded-md border-[1px]' onClick={() => {setLayerTabOpen(!isLayerTabOpen)}}>
+                            {t('type')}
+                            <RiArrowDownSLine  className='ml-3'/>
+                        </div>
+
+                        { isLayerTabOpen && <div className="absolute top-12 bg-white">
+                            {
+                                ["institutions", "persons", "scientific_specimen", "documents"].map((item)  => {
+                                    let label = item.split("_")[1] || item;
+                                    return (
+                                        <div className="flex w-full" key={item}>
+                                            <label htmlFor={item} className='w-full flex items-center hover:bg-gray-200 cursor-pointer p-2'>
+                                                <input 
+                                                    type="checkbox" 
+                                                    name={item} 
+                                                    id={item}  
+                                                    className='h-0 w-0' 
+                                                    defaultChecked={activeLayers.includes(item)}
+                                                    onChange={toggleActiveLayers} 
+                                                />
+                                                <div className={`${activeLayers.includes(item) ? 'bg-gray-300' : 'bg-gray-100' } p-1 rounded-full text-white`}>
+                                                    {getMarkerIcon(item)}   
+                                                </div>
+                                                <span className='mx-2 capitalize'>{t(label) || label}</span>
+                                            </label>                                            
+                                        </div>
+                                    )
+                                })
+                            }
+                        </div> }
+                        
+                    </div>
                 </nav> : "" }
 
                 <div className="w-full">
-                    <MainMap projection={"globe"} basemap={"darks"} ref={mapRef}>
-                        {state.stopovers.length && <StopOVerMarkers stopovers={state.stopovers} handelClick={handleStopoverClick} activeStopOver={activeStopOver}/>}
+                    <MainMap projection={"globe"} basemap={"daks"} ref={mapRef}>
+                        {state.stopovers.length && <StopOVerMarkers stopovers={state.stopovers} handleImageClick={setActiveImage} handelClick={handleStopoverClick} activeStopOver={activeStopOver}/>}
                         <Source type="geojson" data={Novara}>
                             { <Layer {...dataLayer} /> }
                         </Source>
 
                         { activeStopOver  ? <Markers 
-                            items={allData.filter(entry => entry.stopover == activeStopOver['MAIN PLACE'])} 
+                            handleImageClick={setActiveImage}
+                            hoverItem={hoverItem}
+                            items={allData.filter(entry => activeLayers.includes(entry.category)).filter(entry => entry.stopover == activeStopOver['MAIN PLACE'])} 
                             setActiveItem={setActiveItem} 
                         /> : "" }
 
@@ -269,17 +362,26 @@ export default function MainPage() {
                                         </div>
                         
                                         <div className=''>
-                                        <div className="fontsemibold">{activeStopOver['MAIN PLACE']} ({activeStopOver['STOPOVER']})</div>
+                                        <div className="fontsemibold">
+                                            {language == "it" ?
+                                                `${activeStopOver['ITA_MAIN PLACE']} (${activeStopOver['ITA_STOPOVER']})` :
+                                                `${activeStopOver['MAIN PLACE']} (${activeStopOver['STOPOVER']})`
+                                            }
+                                        </div>
                                         <div className="text-gray-400 flex">
-                                            Date: {activeStopOver['ARRIVAL DAY']} - {activeStopOver['DEPARTURE DAY']}
+                                            {t('date')}: {
+                                                language == "it" ? (activeStopOver['ITA_ARRIVAL DAY'] || activeStopOver['ARRIVAL DAY']) : activeStopOver['ARRIVAL DAY']
+                                            } - {
+                                                language == "it" ? (activeStopOver['ITA_DEPARTURE DAY'] || activeStopOver['DEPARTURE DAY']) : activeStopOver['DEPARTURE DAY']
+                                            }
                                         </div>
 
                                         <div className="px-0">
-                                            Duration: {activeStopOver['DURATION (days)']}
+                                            {t('duration')}: {activeStopOver['DURATION (days)']}
                                         </div>
 
-                                        <div className="icon-box shadow-md p-2 rounded-md mt-1" style={{ backgroundColor:(VoyageColors[activeStopOver['VOYAGE VARIANTS']] || "gray")}}>
-                                            <p className='span-1'>{activeStopOver['VOYAGE VARIANTS']}</p>
+                                        <div className="icon-box shadow-md p-2 rounded-md mt-1 min-w-[200px]" style={{ backgroundColor:(VoyageColors[activeStopOver['VOYAGE VARIANTS']] || "gray")}}>
+                                            <p className='span-1'>{t(activeStopOver['VOYAGE VARIANTS'])}</p>
                                         </div>
                                         </div>
                                     </div>
@@ -288,29 +390,30 @@ export default function MainPage() {
                     </MainMap>
                 </div>
 
-                <div className="tab-toggler absolute w-96 bg-white left-6 top-10 rounded-[10px] overflow-hidden">
+                <div className="tab-toggler absolute w-96 bg-white left-6 top-10 rounded-[10px] overflow-hidden z-20">
                     <ul className="flex flex-wrap text-sm font-medium text-center text-gray-500 border-b border-gray-200 w-full uppercase">
-                        <li className="me-2 flex-1">
+                        <li className="flex-1">
                             <a href="#" onClick={() => setActiveStopoverTab("list")} aria-current="page" 
-                                className={`w-full inline-block p-2  ${ activeStopoverTab == "list" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-lg active dark:bg-gray-800 dark:text-blue-500`}
+                                className={`w-full inline-block p-2  ${ activeStopoverTab == "list" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-lg active dak:bg-gray-800 dak:text-blue-500`}
                             >
-                                List
+                                {t('list')}
                             </a>
                         </li>
-                        <li className="me-2 flex-1">
+                        <li className="flex-1">
                             <a href="#"  onClick={() => setActiveStopoverTab("timeline")} 
-                                className={`w-full inline-block p-2 ${ activeStopoverTab == "timeline" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-lg hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 dark:hover:text-gray-300`}
+                                className={`w-full inline-block p-2 ${ activeStopoverTab == "timeline" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-lg hover:text-gray-600 hover:bg-gray-50 dak:hover:bg-gray-800 dak:hover:text-gray-300`}
                             >
-                                Timeline
+                                {t('timeline')}
                             </a>
                         </li>
                     </ul>
                 </div>
 
-                { activeStopoverTab == "timeline" ? <div className="absolute text-white left-6 top-24 timeline-section z-30 bg-[#2B222D] w-96 overflow-hidden rounded-[10px] border-[4px] border-[#AD9A6D]">
+                { activeStopoverTab == "timeline" ? <div className="absolute text-white left-6 top-20 timeline-section z-30 bg-[#2B222D] w-96 overflow-hidden rounded-[10px] border-[4px] border-[#AD9A6D]">
                     <div className="timeline-header p-4">
                         <div className="title font-semibold font-medium uppercase">
-                            StopOvers
+                            {t('stopovers')}
+
                             ({
                             [...stopovers]
                             .filter(stopover => stopover['ARRIVAL DAY'] !== "N.A.")
@@ -359,33 +462,33 @@ export default function MainPage() {
                     <div className="py-2 h-[65vh] w-full overflow-hidden">
 
                         <div className="p-4 py-2 uppercase font-medium">
-                            <h5 className=''>Stopovers ({targetStopOvers.length})</h5>
+                            <h5 className=''>{t('stopovers')} ({targetStopOvers.length})</h5>
                             <input 
                                 type="text" 
-                                placeholder='Search Stopover'
+                                placeholder={t('search_stopover')}
                                 defaultValue={""}
                                 onChange={(e) => {
                                     setState({...state, query:e.target.value});
                                 }}
-                                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
                             />
                         </div>
 
                         <div className="p-4 py-2">
-                            <h5>Select Voyage</h5>
+                            <h5 className='capitalize'>{t('voyage_label')}</h5>
                             <select name="voyage" id="voyage"
                                 defaultValue={""}
                                 onChange={(e) => {
                                     setState({...state, activeVoyage:e.target.value});
                                 }}
-                                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
+                                className='capitalize bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
                             >
-                                <option value="">All Voyages</option>
-                                {(voyages.map((voyage, i) => (<option key={i}>{voyage}</option>) ))}
+                                <option value="" >{t('all_voyages')}</option>
+                                {(voyages.map((voyage, i) => (<option key={i}>{t(voyage)}</option>) ))}
                             </select>
                         </div>
 
-                        <ul className="w-full h-[75%] overflow-y-auto text-sm font-medium text-gray-900 rounded-none dark:bg-gray-700">
+                        <ul className="w-full h-[75%] overflow-y-auto overflow-x-hidden text-sm font-medium text-gray-900 rounded-none dak:bg-gray-700">
                             {
                                 Object.keys(groupedStopOvers).map((mainPlace,i) => {
                                     if(groupedStopOvers[mainPlace].length > 1) {
@@ -429,9 +532,12 @@ export default function MainPage() {
                     <DetailTab 
                         setActiveStopOver={() => setActiveStopOver("")} 
                         setActiveTab={setActiveTab}
+                        setHoverItem={setHoverItem}
                         data={allData.filter(entry => entry.stopover == activeStopOver['MAIN PLACE'])}
                         tableInfo={allData.filter(entry => entry.stopover == activeStopOver['MAIN PLACE']).filter(entry => entry.category == activeTab)}
                         activeTab={activeTab}
+                        activeStopOver={activeStopOver}
+                        setActiveLink={setActiveLink}
                         setActiveItem={setActiveItem}
                     /> : 
                     ""
@@ -443,10 +549,10 @@ export default function MainPage() {
                 >
                     <div className="flex space-x-2 py-3 flex px-3 bg-white/40 rounded-t-[5px] shadow-round">
                     {/* <div className={tabClassName} onClick={() => toggleActiveTable("stopovers")}>StopOvers</div> */}
-                    <div className={tabClassName} onClick={() => toggleActiveTable("persons")}>Persons</div>
-                    <div className={tabClassName} onClick={() => toggleActiveTable("documents")}>Documents</div>
-                    <div className={tabClassName} onClick={() => toggleActiveTable("scientific_specimen")}>Scientific Specimen</div>
-                    <div className={tabClassName} onClick={() => toggleActiveTable("institutions")}>Institutions</div>
+                    <div className={tabClassName} onClick={() => toggleActiveTable("persons")}>{t('persons')}</div>
+                    <div className={tabClassName} onClick={() => toggleActiveTable("documents")}>{t('documents')}</div>
+                    <div className={tabClassName} onClick={() => toggleActiveTable("scientific_specimen")}>{t('scientific_specimen')}</div>
+                    <div className={tabClassName} onClick={() => toggleActiveTable("institutions")}>{t('institutions')}</div>
                     {/* <div className={tabClassName} onClick={() => toggleActiveTable("guide")}>Guide</div> */}
                     </div>
                 
@@ -455,32 +561,62 @@ export default function MainPage() {
                 { 
                     activeTable && <Modal activeTab={activeTable} isOpen={true} toggleActiveTable={setActiveTable}>
                     {/* <Table data={state[activeTable]} columnNames={[]} columnMapping={{}}/> */}
-                    {
-                        isSummaryClick ? 
-                        <Grid 
-                            data={getActiveTableInfo(activeTable)} 
-                            columnNames={[]} 
-                            columnMapping={{}}
-                            tableName={activeTable} 
-                            setActiveItem={setActiveItem}
-                        />
-                        :
-                        <Grid 
-                            data={state[activeTable]} 
-                            columnNames={[]} 
-                            columnMapping={{}}
-                            tableName={activeTable} 
-                            setActiveItem={setActiveItem}
-                        />
-                    }
-                    
+                        <div className="w-full h-full">
+                            <ul className="flex flex-wrap text-sm font-medium text-center text-gray-500 border-b border-gray-200">
+                                <li className="me-0">
+                                    <a 
+                                        href="#" 
+                                        onClick={(e) => { e.preventDefault(); setActiveView('table'); }} 
+                                        className={`inline-block p-4 hover:bg-gray-50 ${activeView == "table" ? "text-blue-600 bg-gray-100" : ""}`}
+                                    >
+                                        Table
+                                    </a>
+                                </li>
+
+                                <li className="me-0">
+                                    <a 
+                                        href="#" 
+                                        className={`inline-block p-4 hover:bg-gray-50 ${activeView == "charts" ? "text-blue-600 bg-gray-100" : ""}`}
+                                        onClick={(e) => { e.preventDefault(); setActiveView('charts'); }} 
+                                    >
+                                        Charts
+                                    </a>
+                                </li> 
+                            </ul>
+
+                            <div className={`table-view w-full h-full ${activeView == "table" ? "" : " hidden"}`}>
+                                {
+                                    isSummaryClick ? 
+                                    <Grid 
+                                        data={getActiveTableInfo(activeTable)} 
+                                        columnNames={[]} 
+                                        columnMapping={{}}
+                                        tableName={activeTable} 
+                                        setActiveItem={setActiveItem}
+                                    />
+                                    :
+                                    <Grid 
+                                        data={state[activeTable]} 
+                                        columnNames={[]} 
+                                        columnMapping={{}}
+                                        tableName={activeTable} 
+                                        setActiveItem={setActiveItem}
+                                    />
+                                }
+                            </div> 
+
+                            <div className={`chart-view w-full h-full ${activeView == "charts" ? "" : "hidden"}`}>
+                                <Charts  tableName={activeTable} tableData={state[activeTable]} />
+                            </div>
+
+                        </div>
                     </Modal>
                 }
 
                 <CollapsibleTab
                     position="top-left"
                     collapseIcon={<LucideGitGraph className="text-gray-500"/>}
-                    collapseClass="summary-cards absolute z-20 left-6 bottom-8  min-w-[40px] min-h-[40px]"
+                    collapseClass="summary-cards absolute z-20 left-6 bottom-4  min-w-[40px] min-h-[40px]"
                 >
                     <div className="space-x-0 py-2 flex px-3 bg-white rounded-[25px] shadow-round">
                     <div className="tab flex items-center px-1 cursor-pointer" onClick={() => {setIsSummaryClick(true); setActiveTable('scientific_specimen');}}>
@@ -488,7 +624,7 @@ export default function MainPage() {
                             <Bird size={20} color="#4AB46C"/>
                         </div>
                         <div className="count flex flex-col items-center relative h-full">
-                            <span className="text-xs text-gray-500 font-semibold mb-[-5px]">Specimens</span>
+                            <span className="text-xs text-gray-500 font-semibold mb-[-5px] capitalize">{t('specimens')}</span>
                             <div className="text-xl font-bold text-gray-900 text-center w-full">
                             {
                                 activeStopOver ?
@@ -506,7 +642,7 @@ export default function MainPage() {
                             <File size={20} color="cyan" />
                         </div>
                         <div className="count flex flex-col items-center justify-between">
-                        <span className="text-xs text-gray-500 font-semibold mb-[-5px]">Docs</span>
+                        <span className="text-xs text-gray-500 font-semibold mb-[-5px] capitalize">{t('docs')}</span>
                         <div className="text-xl font-bold text-gray-900 text-center w-full">
                             {
                             activeStopOver ?
@@ -524,14 +660,14 @@ export default function MainPage() {
                             <School size={20} color="gray" />
                         </div>
                         <div className="count flex flex-col items-center justify-between">
-                        <span className="text-xs text-gray-500 font-semibold mb-[-5px]">Institutions</span>
+                        <span className="text-xs text-gray-500 font-semibold mb-[-5px] capitalize">{t('institutions')}</span>
                         <div className="text-xl font-bold text-gray-900 text-center w-full">
                             {
                             activeStopOver ?
-                            state.documents.filter(doc => doc['TITLE / NAME']).filter(document => {
-                                return (document['MAIN COLLECTION PLACE'] && document['MAIN COLLECTION PLACE'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase());
+                            state.institutions.filter(doc => doc['TITLE / NAME']).filter(institution => {
+                                return (institution['MAIN PLACE'] && institution['MAIN PLACE'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase());
                             }).length
-                            : state.documents.filter(doc => doc['TITLE / NAME']).length
+                            : state.institutions.filter(instiution => instiution['INSTITUTION NAME']).length
                             }
                         </div>
                         </div>
@@ -542,7 +678,7 @@ export default function MainPage() {
                             <Users size={20} color="orange" />
                         </div>
                         <div className="count flex flex-col items-center">
-                            <span className="text-xs text-gray-500 font-semibold mb-[-5px]">Persons</span>
+                            <span className="text-xs text-gray-500 font-semibold mb-[-5px] capitalize">{t('persons')}</span>
                             <span className="text-xl font-bold text-gray-900 text-center w-full">
                             { activeStopOver ? 
                                 state.persons.filter(person => (person['MAIN ENCOUNTER PLACE'] && person['MAIN ENCOUNTER PLACE'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase()) ).length :
@@ -555,15 +691,31 @@ export default function MainPage() {
                     
                 </CollapsibleTab>
 
-               {
+               {/* {
                 activeItem ? (activeItem && activeItem.table == "scientific_specimen") ? 
-                    <ScientificCollectionModal popupInfo={activeItem.info} setActiveItem={setActiveItem} setActiveLink={setActiveLink}/> : 
-                    <ActiveItemInfoModal popupInfo={activeItem.info} setActiveItem={setActiveItem} setActiveLink={setActiveLink}/> : ""
-                }
+                    <ScientificCollectionModal popupInfo={activeItem.info} setActiveItem={setActiveItem} setActiveLink={setActiveLink} setShowSpline={setShowSpline} /> : 
+                    <ActiveItemsCarousel 
+                        activeItem={activeItem} 
+                        items={allData.filter(entry => entry.category == activeItem.table)} 
+                        setActiveItem={setActiveItem} setActiveLink={setActiveLink} 
+                        isSpecimen={activeItem.table == "scientific_specimen"}
+                        setShowSpline={setShowSpline}
+                    /> : ""
+                } */}
+
+                    { activeItem  && <ActiveItemsCarousel 
+                        activeItem={activeItem} 
+                        items={allData.filter(entry => entry.category == activeItem.table)} 
+                        setActiveItem={setActiveItem} setActiveLink={setActiveLink} 
+                        isSpecimen={activeItem.table == "scientific_specimen"}
+                        setShowSpline={setShowSpline}
+                    />  }
+
+                { ( showSpline && activeItem && activeItem.table == "scientific_specimen")  ? <SpecimenSplineModal activeItem={activeItem} setShowSpline={setShowSpline} /> : "" }
             </div>
 
-            {activeLink ? <Modal activeTab={activeLink} isOpen={true} toggleActiveTable={setActiveLink}>
-                <iframe src={activeLink} frameBorder="0" width={"100%"} height={"100%"}></iframe>
+            {activeLink ? <Modal activeTab={activeTab} isOpen={true} toggleActiveTable={setActiveLink}>
+                <iframe src={encodeURI(activeLink)} width={"100%"} height={"100%"} target="_parent"></iframe>
             </Modal> : ""}
         </MainLayout>
     )
@@ -590,6 +742,9 @@ const Accordion = ({title, children}) => {
 }
 
 const StopOverCard = ({stopOver, onClick, activeStopOver}) => {
+    const t = useTranslation();
+    const { language } = useLocalization();
+
     return (
         <li 
             className="w-full flex px-4 text-xs rounded-t-lg items-center cursor-pointer hover:bg-gray-200"
@@ -605,34 +760,44 @@ const StopOverCard = ({stopOver, onClick, activeStopOver}) => {
                 <span className="absolute top-5 bottom-0 h-[80%] bg-gray-500/50 w-[2px]"></span>
             </div>
             <div className="border-b border-gray-300 w-full text-left px-3 py-3">
-                {stopOver['MAIN PLACE']} ({stopOver['STOPOVER']})
-                {stopOver['ARRIVAL DAY'] && stopOver['ARRIVAL DAY'] !== "N.A." ? <div className='text-[11px] text-gray-400'>{stopOver['ARRIVAL DAY']}</div> : ""}
+                
+                {language == "it" ?
+                    `${stopOver['ITA_MAIN PLACE']} (${stopOver['ITA_STOPOVER']})` :
+                    `${stopOver['MAIN PLACE']} (${stopOver['STOPOVER']})`
+                }
+                {stopOver['ARRIVAL DAY'] && stopOver['ARRIVAL DAY'] !== "N.A." ? <div className='text-[11px] text-gray-400'>
+                    {/* {stopOver['ARRIVAL DAY']} - {stopOver['DEPARTURE DAY']} */}
+                    {
+                        language == "it" ? (stopOver['ITA_ARRIVAL DAY'] || stopOver['ARRIVAL DAY']) : stopOver['ARRIVAL DAY']
+                    } - {
+                        language == "it" ? (stopOver['ITA_DEPARTURE DAY'] || stopOver['DEPARTURE DAY']) : stopOver['DEPARTURE DAY']
+                    }
+                </div> : ""}
             </div>                  
         </li>
     )
 }
 
-const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActiveItem, tableInfo}) => {
-    console.log(data);
-
+const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActiveItem, setHoverItem, tableInfo, activeStopOver, setActiveLink}) => {
+    const t = useTranslation();
     return (
-        <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-5 h-[80vh] right-0 top-10 rounded-xl shadow-lg border-[4px] border-[#AD9A6D] overflow-hidden">
+        <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-[20px] h-[80vh] top-10 rounded-xl shadow-lg border-[3px] border-[#AD9A6D] overflow-hidden">
             <div className="max-h-full h-full text-[#54595f] overflow-y-auto overflow-x-hidden bg-[#F8F1E5] ">
                 <button className="absolute right-6 top-4 cursor-pointer rounded-full border-[#E9E4D8] border-[5px] p-1 bg-[#AD9A6D] text-[#E9E4D8]" onClick={() => setActiveStopOver()}>
                     <X size={22}/>
                 </button>
 
-                <div className="px-2 w-fit text-[24px] text-black w-full bg-white h-16 flex items-center">
-                  <span className="font-semibold">Details ({data.length})</span>
+                <div className="px-2 w-fit text-[24px] text-black w-full bg-white flex items-center py-4 rounded-xl">
+                  <span className="font-semibold capitalize">{t('details')} ({data.length})</span>
                 </div>
 
                 <div className=" h-[88%]">
-                    <div className="border-b border-gray-200 dark:border-gray-700">
-                        <ul className="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-styled-tab" data-tabs-toggle="#default-styled-tab-content" data-tabs-active-classes="text-purple-600 hover:text-purple-600 dark:text-purple-500 dark:hover:text-purple-500 border-purple-600 dark:border-purple-500" data-tabs-inactive-classes="dark:border-transparent text-gray-500 hover:text-gray-600 dark:text-gray-400 border-gray-100 hover:border-gray-300 dark:border-gray-700 dark:hover:text-gray-300" role="tablist">
+                    <div className="border-b border-gray-200 dak:border-gray-700">
+                        <ul className="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-styled-tab" data-tabs-toggle="#default-styled-tab-content" data-tabs-active-classes="text-purple-600 hover:text-purple-600 dak:text-purple-500 dak:hover:text-purple-500 border-purple-600 dak:border-purple-500" data-tabs-inactive-classes="dak:border-transparent text-gray-500 hover:text-gray-600 dak:text-gray-400 border-gray-100 hover:border-gray-300 dak:border-gray-700 dak:hover:text-gray-300" role="tablist">
                             {
-                            ['persons',  'institutions', 'scientific_specimen', 'documents'].map(tableName => {
+                            ['stopovers', 'persons',  'institutions', 'scientific_specimen', 'documents'].map(tableName => {
                                 return  (
-                                <li key={tableName} className="mx-0 px-1" role="presentation">
+                                <li key={tableName} className="mx-0" role="presentation">
                                     <button 
                                         onClick={() => setActiveTab(tableName)} 
                                         className={`${tableName == activeTab ? 'text-[#191919] border-[#191919] bg-[#AD9A6D]' : ''} capitalize inline-block py-3 px-1 border-b-2`}
@@ -643,7 +808,7 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
                                         aria-controls="profile" 
                                         aria-selected="true"
                                     >
-                                        {tableName.includes("specimen") ? "Specimens" : tableName.split("_").join(" ")}
+                                        {tableName.includes("specimen") ? t('specimens') : t(tableName.split("_").join(" ")) }
                                     </button>
                                 </li>
                                 )
@@ -652,14 +817,26 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
                         </ul>
                     </div>
 
-                    <div className="h-[100%] p-1">
+                    <div className="h-[90%] p-1">
                         <div className="py-0 px-0 w-full">
+                            {
+                                activeTab == "stopovers" && 
+                                    <ActiveItemInfoModal 
+                                        isStopOver={true}
+                                        popupInfo={activeStopOver} 
+                                        setActiveItem={setActiveItem} 
+                                        setActiveLink={setActiveLink}
+                                    />
+                            }
+
                             { 
+                                
                                 ['persons',  'institutions', 'scientific_specimen', 'documents'].map(tableName => {
                                     return (activeTab == tableName) && <Table 
                                     key={tableName} 
                                     tableName={tableName} 
                                     setActiveItem={setActiveItem}
+                                    setHoverItem={setHoverItem}
                                     data={tableInfo} 
                                     columnNames={columnNames[tableName]} columnMapping={{}} 
                                     /> 
@@ -673,50 +850,75 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
     )
 }
 
-const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink }) => {
-    console.log(popupInfo)
+const SpecimenSplineModal = ({ activeItem, setShowSpline }) => {
+    return(
+      <Modal activeTab={activeItem.info['NAME']} toggleActiveTable={() => setShowSpline(false)} isOpen={true}>
+        <iframe 
+            className="spline-canvas h-[80%] my-auto" src={`https://my.spline.design/${activeItem.info['SPLINE-CODE']}`} width="100%" frameBorder="0"></iframe>
+      </Modal>
+      
+    )
+  }
+
+const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, setShowSpline }) => {
+    const {language} = useLocalization();
+    const t = useTranslation();
 
     const onLinkClick = (e) => {
         e.preventDefault();
         setActiveLink(e.target.href);
     }
 
+    // console.log(popupInfo);
+    // absolute right-0 top-[110px] rounded-xl border-[2px] border-[#000]
     return (
-      <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-5  h-[68vh] right-0 top-[155px] rounded-xl shadow-lg border-[4px] border-[#AD9A6D]">
+        <div 
+            style={{ boxShadow:"0 -1px 20px 0 #ad9a6d"}} 
+            className=" z-50 bg-[#f1f0ee] w-[450px] right-5 h-[70vh] detail-modal"
+        >
             <div className="flex w-full px-[2%] py-5 max-h-full space-x-2 text-[#54595f] overflow-y-auto overflow-x-hidden ">
-  
-              <button className="absolute right-6 top-2 cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
-                <X size={22} className='font-bold'/>
-              </button>
+                <button 
+                    className="absolute right-6 top-2 cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" 
+                    onClick={() => setActiveItem(null)}
+                >
+                    <X size={22} className='font-bold'/>
+                </button>
   
               <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
                 <div className="shadow-md rounded-full mb-4 border-[2px] px-5 w-fit min-w-20 border-black text-lg text-center uppercase">
-                  <span className="font-semibold">{popupInfo[' SUBJECT ']}</span>
+                  <span className="font-semibold">{language == "it" ? popupInfo["ITA_SUBJECT"] : popupInfo['SUBJECT']}</span>
                 </div>
+
+                { 
+                    popupInfo['SPLINE-CODE']  && 
+                    <button className="absolute right-20 top-4 bg-gray-300 rounded-md px-2 capitalize" onClick={() => setShowSpline(true)}>{t('show spline')}</button>
+                }
   
                 <div className="content h-full">
                   <div className="header-section flex flex-col">
-                    <h2 className="text-[#363636] text-[1.5em]">
-                        <strong>{popupInfo['NAME']}</strong>
-                    {/* </h2> */}
-  
-                    {/* <h3 className="ct-headline text-[#363636] mb-2 text-[1.3em] py-0"> */}
-                      <span  className="ct-span">
-                        <p>
-                          <em className="italic">{popupInfo['SCIENTIFIC NAME']}</em></p>
-                      </span>
+                    <h2 className="text-[#363636] mb-[20px] relative">
+                        <strong className='font-bold  text-[1.4em]'>{language == "it" ? popupInfo["ITA_NAME"] : popupInfo['NAME']}</strong>
+                        <span  className="ct-span ">
+                            <p>
+                            <em className="italic text-[1.4em]">{popupInfo['SCIENTIFIC NAME']}</em></p>
+                        </span>
+
+                        
+
                     </h2>
 
                     <div className="px-0 h-auto w-full">
-                        <img src={popupInfo['FEATURED IMAGE']} className="w-full"/>
+                        {/* <img src={popupInfo['FEATURED IMAGE']} className="w-full"/> */}
+                        <ImageViewer imageUrl={popupInfo['FEATURED IMAGE']} className="w-full" showImage={true} onClose={console.log}/>
                     </div>
 
                     <div className="font-semibold">
-                        <h5 className="text-[1.3em] text-[#ad9a6d]">
-                            Nomenclature adopted by the Novara scientists
+                        <h5 className="text-title text-[1.2em] text-[#ad9a6d]">
+                            {/* Nomenclature adopted by the Novara scientists */}
+                            {t('nomenclature_text')}
                         </h5>
 
-                        <h5 className='text-[#363636] font-semibold text-[1.3em]'>
+                        <h5 className='text-title text-[#363636] text-[1.2em]'>
                             <em className="">{popupInfo['SCIENTIFIC NAME']}</em>
                         </h5>
                     </div>
@@ -724,7 +926,7 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink }) 
                     <hr className='mt-3 border-black'/>
                     
   
-                    {/* <h3 className="ct-headline text-xl color-dark mb-6 Nomenclature">
+                    {/* <h3 className="ct-headline text-xl color-dak mb-6 Nomenclature">
                       <span className="ct-span"><em className="italic">Ardea candidissima</em> Gmel.</span>
                     </h3> */}
   
@@ -733,12 +935,12 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink }) 
                   <div className="body-section">
                     <div className="description my-[25px] text-[14px] text-gray-700">
                       <div>
-                        {popupInfo['FROM THE SCIENTIFIC VOLUMES'].split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
+                        {(language == "it" ? popupInfo['ITA_FROM THE SCIENTIFIC VOLUMES'] || "" : popupInfo['FROM THE SCIENTIFIC VOLUMES'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
                       </div>
                     </div>
 
                     
-                    <div className="summary-info bg-[#D4D4D4] flex-[0.6] p-[20px] rounded-[10px] h-full my-[13px]">
+                    <div className="summary-info bg-[#D4D4D4] flex-[0.6] p-[20px] rounded-[10px] h-full my-[16px]">
                         {/* <div className="py-0">
                             <h3 className="text-[24px] font-semibold">Details</h3>
                         </div> */}
@@ -747,11 +949,11 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink }) 
                         <div className="info-section grid grid-cols-2 gap-2">
                             {
                             ['State of preservation', 'Collection date', 'Collection place',  'Inventory Number', 'Dimension', 'IUCN INDEX' ].map((field,i) => {
-        
+                                let colName = language == "it" ? `ITA_${field.toLocaleUpperCase()}` : field.toLocaleUpperCase();
                                 return (
                                 <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-2 text-sm w-full">
-                                    <h4 className="text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{field}</h4>
-                                    <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[field.toLocaleUpperCase()]}</h5>
+                                    <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t(field.toLocaleLowerCase().split(" ").join("_"))}</h4>
+                                    <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[colName] || popupInfo[field.toLocaleUpperCase()]}</h5>
                                 </div>
                                 )
                             })
@@ -762,19 +964,19 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink }) 
                         </div>
 
                         <div className="flex flex-col text-lg gap-2 items-start py-2 text-sm w-full">
-                            <h4 className="text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">Owner</h4>
+                            <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('owner')}</h4>
                             <h5 className="capitalize text-[1.1em]">{popupInfo["OWNER"]}</h5>
                         </div>
                     </div>
   
-                    <h3 className="text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">References</h3>
+                    <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('references')}</h3>
                     <div className="mt-[2px] mb-[25px] text-[14px] text-gray-700">
                         {popupInfo['REFERENCES'].split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
                     </div>
 
-                    <hr className='my-3 border-black'/>
+                    <hr className='my-3 border-black mb-6'/>
   
-                    <h3 className="text-[18px] text-[#ad9a6d] font-semibold">Links</h3>
+                    <h3 className="text-title text-[18px] text-[#ad9a6d] font-semibold capitalize">{t('links')}</h3>
                     <div className="pb-5 text-[14px] text-gray-700">
   
                       {
@@ -799,9 +1001,62 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink }) 
     )
 }
 
-const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink }) => {
-    console.log(popupInfo);
-    
+const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, isSpecimen, setShowSpline }) => {
+    let itemIndex = items.findIndex(entry => entry.id == activeItem.info.id);
+    const [currentIndex, setCurrentIndex] = useState(itemIndex);
+
+    const nextIndex = () => {
+        if(currentIndex < items.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+        } else {
+            setCurrentIndex(0);
+        }
+    }
+
+    const prevIndex = () => {
+        if(currentIndex == 0) {
+            setCurrentIndex(items.length -1);
+        } else {
+            setCurrentIndex(currentIndex - 1);
+        }
+    }
+
+    return (
+        <div className='absolute right-0 top-[110px] max-h-[70vh] h-full border-[2px] border-[#000000] z-50 right-5 rounded-xl overflow-hidden'>
+            {/* <Carousel items={items} currentIndex={currentIndex}> */}
+
+                <button onClick={() => nextIndex()} className="carousel btn absolute z-10 top-[50%] right-0 bg-white text-black rounded-full p-1">
+                    <RiArrowRightSLine />
+                </button>
+                <button onClick={() => prevIndex()} className="carousel btn absolute z-10 top-[50%] left-0 bg-white text-black rounded-full p-1">
+                    <RiArrowLeftSLine />
+                </button>
+
+
+              
+                { isSpecimen ? 
+                    <ScientificCollectionModal 
+                        popupInfo={items[currentIndex]} 
+                        setActiveItem={setActiveItem} 
+                        setActiveLink={setActiveLink} 
+                        setShowSpline={setShowSpline}
+                    /> :
+                    <ActiveItemInfoModal 
+                        popupInfo={items[currentIndex]} 
+                        setActiveItem={setActiveItem} 
+                        setActiveLink={setActiveLink}
+                    /> 
+                }
+            {/* </Carousel> */}
+        </div>
+    );
+
+}
+
+const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOver=false }) => {
+    const t = useTranslation();
+    const { language } = useLocalization();
+
     let colors = {
         "stopovers":"red",
         "persons":"orange",
@@ -812,6 +1067,7 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink }) => {
 
 
     let fields = {
+        stopovers:['DEPATURE DAY', 'ARRIVAL DAY', 'DURATION (days)', 'VOYAGE VARIANTS', 'ANCHORAGE TYPOLOGY'],
         institutions:['Director', "Foundation date", "Nature", ],
         documents:["MAIN COLLECTION PLACE", "SECONDARY COLLECTION PLACE", "ALTERNATIVE TITLE / NAME", "ENGLISH TRANSLATION", "FIRST AUTHOR", "SECOND AUTHOR",
             "TRANSLATED BY", "EDITED BY", "KIND OF SOURCE", "MEDIUM", "MEASURES / QUANTITY / FORMAT", "LANGUAGE", "YEAR  / DATE", "PUBLISHER / PRINTER", 
@@ -827,29 +1083,60 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink }) => {
         setActiveLink(e.target.href);
     }
 
-    const description = (popupInfo['FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ROLE DESCRIPTION'] || popupInfo['DESCRIPTION'] || "");
+    // let description = (popupInfo['FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ROLE DESCRIPTION'] || popupInfo['DESCRIPTION'] || "");
+    const description = language == "it" ? 
+        (popupInfo['ITA_FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ITA_ROLE DESCRIPTION'] || popupInfo['ITA_DESCRIPTION'] || "") :
+        (popupInfo['FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ROLE DESCRIPTION'] || popupInfo['DESCRIPTION'] || "");
+
+
     let personsName = "";
-    popupInfo['FIRST NAME'] == "N. A." ? "" : personsName += popupInfo['FIRST NAME'];
-    popupInfo['LAST NAME'] == "N. A." ? "" : personsName += " " + popupInfo['LAST NAME'];
+    personsName += popupInfo['LAST NAME'] == "N. A." ? "" : popupInfo['LAST NAME'];
+    personsName += popupInfo['FIRST NAME'] == "N. A." ? "" : " " + popupInfo['FIRST NAME'];
 
     return (
-      <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-5 h-[68vh] right-0 top-[155px] rounded-xl shadow-lg border-[4px] border-[#AD9A6D]">
-            <div className="flex w-full px-[2%] py-5 max-h-full space-x-2 text-[#54595f] overflow-y-auto overflow-x-hidden ">
+        <div 
+            style={{boxShadow:  !isStopOver? "0 -1px 20px 0 #ad9a6d" : "" }}
+            className={`detail-modal ${ !isStopOver ? 'overflow-y-auto h-full max-h-[70vh] w-[450px] rounded' : ''} bg-[#f1f0ee] `}
+        >
+            <div className={`flex w-full px-[2%] py-5 max-h-full ${ !isStopOver ? 'space-x-2' : ''} text-[#54595f] overflow-y-auto overflow-x-hidden`}>
   
-              <button className="absolute right-6 top-2 cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
-                <X size={22} className='font-bold text-white'/>
-              </button>
+              { !isStopOver ? <button className="absolute right-6 top-2 cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
+                <X size={24} className='font-bold text-white' fontWeight={900}/>
+              </button> : "" }
+
+              
   
-              <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
-                <div className="shadow-md rounded-full mb-4 border-[1px] px-5 w-fit min-w-20 border-black text- text-center uppercase" style={{ borderColor: colors[popupInfo.category]}}>
-                  <span className="font-semibold" >{popupInfo.category}</span>
-                </div>
+               <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
+               { (isStopOver && popupInfo['MAIN PLACE']) && <div className="border-b border-gray-300 w-full text-left text-xl">
+                    { popupInfo['MAIN PLACE']} ({popupInfo['STOPOVER']})
+                    { popupInfo['ARRIVAL DAY'] && popupInfo['ARRIVAL DAY'] !== "N.A." ? <div className='text-[12px] text-gray-400'>
+                        {t('date')}: {popupInfo['ARRIVAL DAY']} - {popupInfo['DEPARTURE DAY']}
+                    </div> : ""}
+                </div> } 
+
+
+                { popupInfo.category  && <div className="shadow-md rounded-full mb-4 mt-2 border-[1px] px-5 w-fit min-w-20 border-black text- text-center uppercase" style={{ borderColor: colors[popupInfo.category]}}>
+                    <span className="font-semibold" >{popupInfo.category}</span>
+                </div> }
+
+                { language == "it" && 
+                    <div  style={{ backgroundColor:(VoyageColors[popupInfo['VOYAGE VARIANTS']] || "gray")}} className='p-2 rounded-md my-2 text-title'>
+                        {language == "it" ? popupInfo['ITA_VOYAGE VARIANTS'] : popupInfo['VOYAGE VARIANTS']}
+                    </div> 
+                }               
   
                 <div className="content h-full">
                   <div className="header-section flex flex-col">
                     <h2 className="text-[#363636] text-[1.5em]">
                         <strong>{popupInfo['NAME'] || popupInfo['TITLE / NAME'] || (`${popupInfo['FIRST NAME'] ? personsName : "" }`) || popupInfo['INSTITUTION NAME']}</strong>
-                    {/* </h2> */}
+                        
+
+                        {/* <span>
+                            { language == "it" ? popupInfo['ITA_MAIN PLACE'] : popupInfo['MAIN PLACE']} ({ language == "it" ? popupInfo['ITA_MAIN PLACE'] : popupInfo['MAIN PLACE']})
+                        </span> */}
+
+
+                       
   
                     {/* <h3 className="ct-headline text-[#363636] mb-2 text-[1.3em] py-0"> */}
                       <span  className="ct-span">
@@ -859,15 +1146,22 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink }) => {
                     </h2>
 
                     <div className="px-0 h-auto w-full">
-                        {popupInfo['FEATURED IMAGE'] && <img src={popupInfo['FEATURED IMAGE']} alt="" className='h-auto' />}
-                        {popupInfo['IMAGE'] && <img src={popupInfo['IMAGE']} alt="" className='h-auto' />}
+                        {/* {popupInfo['FEATURED IMAGE'] && <img src={popupInfo['FEATURED IMAGE']} alt="" className='h-auto' />}
+                        {popupInfo['IMAGE'] && <img src={popupInfo['IMAGE']} alt="" className='h-auto' />} */}
+
+                        {popupInfo['FEATURED IMAGE'] && <ImageViewer imageUrl={popupInfo['FEATURED IMAGE']} alt="" className='h-auto' showImage={true} onClose={console.log}/>}
+                        {popupInfo['IMAGE'] && <ImageViewer imageUrl={popupInfo['IMAGE']} alt="" className='h-auto' showImage={true} onClose={console.log}/>}
+                        
+                        {popupInfo['IMAGES'] && <ImageViewer imageUrl={popupInfo['IMAGES']} alt="" className='h-auto' showImage={true} onClose={console.log}/>}
+                        
+                        <figcaption className='my-3 text-sm'>
+                            {language == "it" ? popupInfo['ITA_CAPTION'] : popupInfo['CAPTION']}
+                        </figcaption>
                     </div>
-
-
                     <hr className='mt-3 border-black'/>
                     
   
-                    {/* <h3 className="ct-headline text-xl color-dark mb-6 Nomenclature">
+                    {/* <h3 className="ct-headline text-xl color-dak mb-6 Nomenclature">
                       <span className="ct-span"><em className="italic">Ardea candidissima</em> Gmel.</span>
                     </h3> */}
   
@@ -890,47 +1184,51 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink }) => {
         
                         <div className="info-section grid grid-cols-1 gap-2">
                             {
-                           fields[popupInfo.category].map((field,i) => {
-        
-                                return (
-                                (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
-                                    <h4 className="text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{field.toLocaleLowerCase()}</h4>
-                                    <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[field] || "N.A"}</h5>
-                                </div> : ""
-                                )
+                                fields[popupInfo.category || 'stopovers'].map((field,i) => {
+                                    return (
+                                        (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
+                                            <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{t(field.toLocaleLowerCase()) || field}</h4>
+                                            <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[field] || "N.A"}</h5>
+                                        </div> : ""
+                                    )
                             })
         
                             }   
-
-                            {/* 'Owner',  */}
                         </div>
-
-                        {/* <div className="flex flex-col text-lg gap-2 items-start py-2 text-sm w-full">
-                            <h4 className="text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">Owner</h4>
-                            <h5 className="capitalize text-[1.1em]">{popupInfo["OWNER"]}</h5>
-                        </div> */}
                     </div>
 
                     { (popupInfo['QUOTATION'] && popupInfo['QUOTATION'] !== "N. A.") ? <div className="description my-[25px] text-[14px] text-gray-700">
-                        <h3 className="text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">Quotation</h3>
+                        <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('quotation')}</h3>
                       <div>
                         {(popupInfo['QUOTATION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
                       </div>
 
                       <hr className='my-3 border-black'/>
                     </div> : "" }
+
+                    { (popupInfo['RESOURCES'] && popupInfo['RESOURCES'] !== "N. A.") ? <div className="description my-[25px] text-[14px] text-gray-700">
+                        <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('resources')}</h3>
+                      <div>
+                        {(popupInfo['RESOURCES'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
+                      </div>
+
+                      <hr className='my-3 border-black'/>
+                    </div> : "" }
                     
                     {(popupInfo['ROLE DESCRIPTION'] && popupInfo['ROLE DESCRIPTION'] !== "N. A.") ? <div className="description my-[25px] text-[14px] text-gray-700">
-                        <h3 className="text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">Role Description</h3>
+                        <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">{t('role description')}</h3>
                         <div>
-                            {(popupInfo['ROLE DESCRIPTION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
+                            {
+                                language == "it" ? (popupInfo['ITA_ROLE DESCRIPTION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>)) :
+                                (popupInfo['ROLE DESCRIPTION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>)) 
+                            }
                         </div>
                         <hr className='my-3 border-black'/>
                     </div> : ""}
   
                     {(popupInfo['REFERENCES'] || "") ?
                     <>
-                    <h3 className="text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">References</h3>
+                    <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">{t('references')}</h3>
                     <div className="mt-[2px] mb-[25px] text-[14px] text-gray-700">
                         {(popupInfo['REFERENCES'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
                     </div>
@@ -940,7 +1238,7 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink }) => {
                         
                     {(popupInfo['LINKS'] || popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "") ? 
                     <>
-                    <h3 className="text-[18px] text-[#ad9a6d] font-semibold">Links</h3>
+                    <h3 className="text-title text-[18px] text-[#ad9a6d] font-semibold capitalize">{t('links')}</h3>
                     <div className="pb-5 text-[14px] text-gray-700">
   
                       {
@@ -950,31 +1248,31 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink }) => {
                           </a>
                         ))
                       }
-                     
   
                     </div> 
                     <hr className='my-3 border-black'/>
                     </> : ""}
-
-                   
   
                   </div>
                 </div>
-              </div>              
-  
-            </div>
+            </div>              
+        </div>
       </div>
     )
 }
 
 
-const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver }) => {
+const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageClick }) => {
+    const t = useTranslation();
+    const { language } = useLocalization();
     const [activeEntry, setActiveEntry] = useState(null);
-    console.log(activeEntry);
+    // console.log(activeEntry);
     return(
       <>
         {stopovers.map((stopover,i) => {
           let [latitude, longitude] = stopover['COORDINATES'];
+        //   console.log(latitude, longitude, stopover['STOPOVER']);
+
           return <Marker 
             key={`${stopover['MAIN PLACE']}-${i}`} 
             latitude={latitude} longitude={longitude} className="cursor-pointer" anchor="top"
@@ -988,7 +1286,7 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver }) => {
               <CircleDot size={10} className='bg-red-500/0 'opacity={0}/>
             </div>
 
-            { (activeStopOver && activeStopOver['STOPOVER'] == stopover['STOPOVER']) ? <div className="radialRingWrapper z-4" onClick={() => handelClick(stopover)}>
+            { (activeStopOver && activeStopOver['STOPOVER'] == stopover['STOPOVER']) ? <div className="radialRingWrapper z-[-1]" onClick={() => handelClick(stopover)}>
                 <div className="radialRing"></div>
             </div> : "" }
           </Marker>
@@ -1002,23 +1300,30 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver }) => {
             className="px-1 max-w-[300px] py-1"
           >
             <div className="w-auto">
-              <div className="flex items-cente gap-3 min-h-[100px]">
+              <div className="flex gap-3 min-h-[100px]">
                 <div className={`relative bg-gray-300 rounded-md min-w-[90px] h-inherit overflow-hidden`}>
                     {/* <div className="h-full bg-orange w-full object-cover" style={{ backgroundImage:`url(${activeEntry['IMAGES']})`}}></div> */}
-                  {activeEntry['IMAGES'] && <img src={activeEntry['IMAGES']} alt="" className='object-fill h-full w-[90px]' />}
+                  {activeEntry['IMAGES'] && <img src={activeEntry['IMAGES']} alt="" onClick={() => handleImageClick(activeEntry['IMAGES'])} className='object-fill h-full w-[90px]' />}
+                  {/* {activeEntry['IMAGES'] && <ImageViewer imageUrl={activeEntry['IMAGES']} className="object-fill h-full w-[90px]" />} */}
                 </div>
   
-                <div className=''>
-                  <div className="fontsemibold">{activeEntry['MAIN PLACE']} ({activeEntry['STOPOVER']})</div>
+                <div className='mr-2'>
+                  <div className="fontsemibold">
+                        {language == "it" ?
+                            `${activeEntry['ITA_MAIN PLACE']} (${activeEntry['ITA_STOPOVER']})` :
+                            `${activeEntry['MAIN PLACE']} (${activeEntry['STOPOVER']})`
+                        }
+                        
+                    </div>
                   <div className="text-gray-400 flex">
-                    Date: {activeEntry['DEPARTURE DAY']} - {activeEntry['ARRIVAL DAY']}
+                    {t('date')}: {activeEntry['DEPARTURE DAY']} - {activeEntry['ARRIVAL DAY']}
                   </div>
 
                   <div className="px-0">
-                    Duration: {activeEntry['DURATION (days)']}
+                    {t('duration')}: {activeEntry['DURATION (days)']}
                   </div>
 
-                  <div className="icon-box shadow-md p-2 rounded-md mt-1" style={{ backgroundColor:(VoyageColors[activeEntry['VOYAGE VARIANTS']] || "gray")}}>
+                  <div className="icon-box shadow-md p-2 rounded-md my-2" style={{ backgroundColor:(VoyageColors[activeEntry['VOYAGE VARIANTS']] || "gray")}}>
                     <p className='span-1'>{activeEntry['VOYAGE VARIANTS']}</p>
                   </div>
                 </div>
@@ -1031,14 +1336,28 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver }) => {
     
 }
 
+const getMarkerIcon = (category) => {
+    switch(category) {
+        case 'persons':
+            return <Users size={15} color='#111'/>;
+        case 'documents':
+            return <Files size={15} color='#111'/>
+        case 'institutions':
+            return <School size={15} color='#111'/>
+        case 'scientific_specimen':
+            return <Bird  size={15} color='#111'/>
+        default:
+            return "";
+    }
+}
 
-const Markers = ({ items, setActiveItem}) => {
+
+const Markers = ({ items, setActiveItem, handleImageClick, hoverItem}) => {
     const [popupInfo, setPopupInfo] = useState(null);
 
     const updateItem = (entry) => {
         let item = items.filter(p => p.COORDINATES).filter(p => p.COORDINATES.toString() == entry.COORDINATES.toString());
   
-        console.log(item);
         setPopupInfo(item);
         setActiveItem(null);
     }
@@ -1053,7 +1372,7 @@ const Markers = ({ items, setActiveItem}) => {
             {field:'DATE', label:'Date Encounter'}
         ],
         scientific_specimen:[
-            {field:' SUBJECT ', label:' Subject '},
+            {field:'SUBJECT', label:' Subject '},
             {field:'COLLECTION PLACE', label:'Collection Place'},
             {field:'IUCN INDEX', label:'Indice IUCN'},
             {field:'COLLECTION DATE', label:'Collection Date'}
@@ -1081,23 +1400,10 @@ const Markers = ({ items, setActiveItem}) => {
     }
 
 
-    const getMarkerIcon = (category) => {
-        switch(category) {
-            case 'persons':
-                return <Users size={15} color='#111'/>;
-            case 'documents':
-                return <Files size={15} color='#111'/>
-            case 'institutions':
-                return <School size={15} color='#111'/>
-            case 'scientific_specimen':
-                return <Bird  size={15} color='#111'/>
-            default:
-                return "";
-        }
-    }
-
     
-    console.log(popupInfo);
+    const t = useTranslation();
+    
+    // console.log(popupInfo);
     return(
         <>
             {(popupInfo && popupInfo.length) ? (
@@ -1122,7 +1428,7 @@ const Markers = ({ items, setActiveItem}) => {
                                             {info['NAME'] || info['TITLE / NAME'] || info['FIRST NAME'] || info['INSTITUTION NAME']}
                                         </h5>
 
-                                        <span style={{ backgroundColor:colors[info.category]}} className=" flex items-center h-5 mr-5 text-[#fff] text-xs font-medium px-2.5 rounded dark:bg-gray-700 dark:text-gray-300">
+                                        <span style={{ backgroundColor:colors[info.category]}} className=" flex items-center h-5 mr-5 text-[#fff] text-xs font-medium px-2.5 rounded dak:bg-gray-700 dak:text-gray-300">
                                             {info['category']}
                                         </span>
                                     </div>
@@ -1132,14 +1438,18 @@ const Markers = ({ items, setActiveItem}) => {
                                     <div className="flex gap-3">
                                     {/* <div className="text-gray-400">ID {popupInfo['ID']} - Persons</div> */}
                                         <div className="relative bg-gray-300 rounded-md min-w-[90px] w-[90px] h-inherit overflow-hidden">
-                                            {info['FEATURED IMAGE'] && <img src={info['FEATURED IMAGE']} alt="" className='rounded-md w-[90px] object-cover h-full' />}
-                                            {info['IMAGE'] && <img src={info['IMAGE']} alt="" className='rounded-md w-full object-cover h-full' />}
+                                            {info['FEATURED IMAGE'] && <img src={info['FEATURED IMAGE']} alt="" className='rounded-md w-[90px] object-cover h-full' onClick={() => handleImageClick(info['FEATURED IMAGE'])} />}
+                                            {info['IMAGE'] && <img src={info['IMAGE']} alt="" className='rounded-md w-full object-cover h-full' onClick={() => handleImageClick(info['IMAGE'])} />}
+
+                                            {/* {info['FEATURED IMAGE'] && <ImageViewer imageUrl={info['FEATURED IMAGE']} alt="" className='rounded-md w-[90px] object-cover h-full' />}
+                                            {info['IMAGE'] && <ImageViewer imageUrl={info['IMAGE']} alt="" className='rounded-md w-full object-cover h-full' />} */}
+
                                         </div>
                                    
                                         <div className='flex-1'>
                                             {
                                             categoryFields[info.category].map(field => (<div key={field.field} className="flex flex">
-                                                <div className="mr-1">{field.label}: </div>
+                                                <div className="mr-1 capitalize">{t(field.label.toLocaleLowerCase().trim()) || field.label}: </div>
                                                 <div className="font-semibold">{info[field.field]}</div>
                                             </div>))
                                             }
@@ -1168,12 +1478,16 @@ const Markers = ({ items, setActiveItem}) => {
                     key={`${document['TITLE / NAME']}-${i}`} 
                     latitude={latitude} longitude={longitude} 
                     className="cursor-pointer"
+                    style={{zIndex: hoverItem && hoverItem.id == document.id ? 100 : "" }}
                     onClick={(e) => {
                     e.originalEvent.stopPropagation();
                         updateItem(document)
                     }}
                 >
-                <div className={`rounded-full flex shadow-md p-2 align-center justify-center ${bgColor}`} style={{ backgroundColor:bgColor}}>
+                <div 
+                    className={` ${ hoverItem && hoverItem.id == document.id ? `border-2 border-black bg-white` : bgColor} rounded-full flex shadow-md p-2 align-center justify-center`} 
+                    style={{ backgroundColor: hoverItem && hoverItem.id == document.id ? 'white' : bgColor}}
+                >
                     {getMarkerIcon(document.category)}
                 </div>
                 </Marker>

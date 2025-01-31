@@ -2,8 +2,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-const Carousel = ({ children: slides, autoSlide = false, autoSlideInterval = 3000, items }) => {
-    const [curr, setCurr] = useState(0);
+const Carousel = ({ children: slides, autoSlide = false, autoSlideInterval = 3000, items, currentIndex=0}) => {
+    const [curr, setCurr] = useState(currentIndex);
 
     const prev = useCallback(() => setCurr((curr) => (curr === 0 ? slides.length - 1 : curr - 1)),[slides])
 
@@ -20,9 +20,9 @@ const Carousel = ({ children: slides, autoSlide = false, autoSlideInterval = 300
 
     useEffect(() => {
         // if(curr) {
-            setCurr(0);
+            setCurr(currentIndex);
         // }
-    }, [items])
+    }, [items, currentIndex])
 
     return (
         <div className='overflow-hidden relative max-w-[350px]'>

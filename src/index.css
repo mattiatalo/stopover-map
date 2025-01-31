@@ -120,19 +120,30 @@ body {
   font-family: "Poppins", serif;
   /* font-weight: 600; */
   font-style: normal;
+  font-size: 15px;
 }
 
 * {
-  font-family: "Poppins", serif;
+
   /* font-family: "DM Serif Text"; */
   /* font-family: -apple-system,"system-ui",Segoe UI,roboto,helvetica,arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; */
   /* font-weight: 600; */
   font-style: normal;
 }
 
+.text-title {
+  font-family: "DM Serif Text", serif !important;
+  font-style: normal;
+}
+
+a.mapboxgl-ctrl-logo {
+  display: none !important;
+}
+
 .mapboxgl-map .mapboxgl-popup-content {
   border-radius: 10px;
   padding: 0px;
+  box-shadow: none !important;
 }
 
 div.mapboxgl-popup {
@@ -209,22 +220,25 @@ div.mapboxgl-popup {
 
 /* width */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 5px;
 }
 
 /* Track */
 ::-webkit-scrollbar-track {
-  background: #f1f1f1; 
+  background: #f1f0ee; 
+  padding:5px;
 }
  
 /* Handle */
 ::-webkit-scrollbar-thumb {
-  background: #888; 
+  background: #000; 
+  border-radius: 3px;
+  border:1px solid white;
 }
 
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: #555; 
+  background: #000; 
 }
 
 .stopover-marker {
@@ -235,4 +249,37 @@ div.mapboxgl-popup {
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, .5), 0 5px 10px 0 rgba(0, 0, 0, .75);
     z-index: 20 !important;
     transition: all var(--transition-3s) ease-in-out;
+}
+
+
+.loading-bar-background {
+  --height: 30px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 5px;
+  width: 200px;
+  height: var(--height);
+  background-color: #212121 /*change this*/;
+  box-shadow: #0c0c0c -2px 2px 4px 0px inset;
+  border-radius: calc(var(--height) / 2);
+}
+
+.loading-bar {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  --height: 20px;
+  width: 0%;
+  height: var(--height);
+  overflow: hidden;
+  background: rgb(222, 74, 15);
+  background: linear-gradient(
+    0deg,
+    rgba(222, 74, 15, 1) 0%,
+    rgba(249, 199, 79, 1) 100%
+  );
+  border-radius: calc(var(--height) / 2);
+  animation: loading 4s ease-out infinite;
 }

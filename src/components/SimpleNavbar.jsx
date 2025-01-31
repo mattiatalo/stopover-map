@@ -3,6 +3,7 @@
 
 import { Navbar } from "flowbite-react";
 import { CloudLightning, Layers, Map, MapPin, Menu, Search } from "lucide-react";
+import LanguageDiv from "./LanguageDiv";
 
 export function SimpleNavbar() {
   return (
@@ -62,6 +63,8 @@ export function SimpleNavbar() {
         <Navbar.Link href="#">Pricing</Navbar.Link>
         <Navbar.Link href="#">Contact</Navbar.Link> */}
       </Navbar.Collapse>
+
+      <LanguageDiv />
     </Navbar>
   );
 }

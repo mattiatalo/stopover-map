@@ -24,7 +24,7 @@ export default forwardRef(function MainMap(props, ref) {
       ref={ref}
       onLoad={onLoad}
       projection={props.projection}
-      style={{ width: "100%", height: "calc(100vh - 64px)"}}
+      style={{ width: "100%", height: "calc(100vh - 90px)"}}
       mapStyle={"mapbox://styles/daudi97/cm4edalgs01ln01sibv3t8wlt"}
       // mapStyle={props.basemap == "dark" ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/outdoors-v11"}
     >

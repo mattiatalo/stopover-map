@@ -1,16 +1,54 @@
 import * as XLSX from 'xlsx';
 
 // let data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQLR3jQJONvbl5wb5m7iN2lwbyMmC0qtVXTNptqZgkDRgbWDi9NZd661-h1wlqo0Q/pub?output=xlsx";
-// let data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS2gpvmtDGYVIKu5s_reUxVkav-Z4LLoJ85CZ8DI4UWz0uIUtZxLDIZN9hqcJtJQQQwuLDkaW9alo2O/pub?output=xlsx";
-let data_url = "/Dati_persone_istituzioni_documenti.xlsx";
+let data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS2gpvmtDGYVIKu5s_reUxVkav-Z4LLoJ85CZ8DI4UWz0uIUtZxLDIZN9hqcJtJQQQwuLDkaW9alo2O/pub?output=xlsx";
+// let data_url = "/Dati_persone_istituzioni_documenti.xlsx";
 
-export async function getData() {
-    let arrayBuffer = await fetch(data_url).then(res => res.arrayBuffer());
+export async function getData(updateDownloadProgress) {
+    let arrayBuffer = await fetch(data_url)
+    .then(response =>  {
+        // console.log(response.headers)
+        const contentLength = response.headers.get('Content-Length') || 13.5 * 1024 * 1024;
+        if (contentLength === null) {
+            throw Error('Response size header unavailable');
+        }
+
+        const total = parseInt(contentLength, 10);
+        let loaded = 0;
+
+        return new Response(
+            new ReadableStream({
+                start(controller) {
+                    const reader = response.body.getReader();
+
+                    read();
+                    async function read() {
+                        const {done, value} = await reader.read();
+
+                        if (done) {
+                            controller.close();
+                            return; 
+                        }
+
+                        loaded += value.length;
+                        updateDownloadProgress({loaded, total})
+
+                        controller.enqueue(value);
+                        read();
+                    }
+                }
+            })
+        );
+
+
+    })
+    .then(res => res.arrayBuffer());
 
     // console.log(arrayBuffer);
     let workbook = XLSX.read(arrayBuffer, {type:'binary'});
 
     let { SheetNames } = workbook;
+    // console.log(workbook);
     let json_data = {}
     
     SheetNames.forEach(sheet => {
@@ -34,16 +72,17 @@ export async function getData() {
                 entry['COORDINATES'] = entry['Coordinates'].split(",").map(entry => parseFloat(entry.trim()));
             }
 
+            // -22.9579824,-43.2237206
 
             return entry;
         });
     });
 
     // ["institutions", "persons", "scientific_specimen", "documents"]
-    // console.log(json_data['Persons']);
+    // console.log(json_data['Scientific specimens'].filter(place => place['SPLINE-CODE']));
     return {
         persons:[...json_data['Persons']].map(entry => ({...entry, stopover:entry['MAIN ENCOUNTER PLACE'], category:'persons'})),
-        stopovers:[...json_data['Stopovers']],
+        stopovers:[...json_data['Stopovers'].filter(entry => entry['COORDINATES'][0] < 90 && entry['COORDINATES'][0] > -90)],
         lists:[...json_data['Lists']],
         scientific_specimen:[...json_data['Scientific specimens']].map(entry => ({...entry, stopover:entry['MAIN PLACE'], category:'scientific_specimen'})),
         institutions:[...json_data['Institutions']].map(entry => ({...entry, stopover:entry['MAIN PLACE'], category:'institutions'})),

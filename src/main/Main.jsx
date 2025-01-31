@@ -44,6 +44,7 @@ export default function Main() {
   const [ isSummaryClick, setIsSummaryClick] = useState(false);
   const [activeTab, setActiveTab] = useState(null);
   const [ activeItem, setActiveItem] = useState(null);
+  const [showSpline, setShowSpline] = useState(false);
 
 
   const handleStopoverClick = (stopOver) => {
@@ -141,8 +142,8 @@ export default function Main() {
                   defaultChecked={activeLayers[layer]} 
                   onChange={() => setActiveLayers({...activeLayers, [layer]:!activeLayers[layer]})}
                 />
-                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#1A56AE]/90"></div>
-                <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">{layer.split("_").join(" ")}</span>
+                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dar:peer-focus:ring-blue-800 rounded-full peer dar:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all dar:border-gray-600 peer-checked:bg-[#1A56AE]/90"></div>
+                <span className="ms-3 text-sm font-medium text-gray-900 dar:text-gray-300 capitalize">{layer.split("_").join(" ")}</span>
               </label>
             </div>)
           })}
@@ -261,7 +262,7 @@ export default function Main() {
         collapseClass="stopover-cards absolute z-20 left-6 top-6 bg-white w-72 rounded-md shadow-round "
       >
         <div className="py-7 h-[70vh] w-full">
-          <ul className="w-full h-full overflow-y-auto text-sm font-medium text-gray-900 rounded-none dark:bg-gray-700">
+          <ul className="w-full h-full overflow-y-auto text-sm font-medium text-gray-900 rounded-none dar:bg-gray-700">
               {
                 state.stopovers.map((stopOver,i) => {
                   return (<li 
@@ -375,8 +376,8 @@ export default function Main() {
       >
         { activeStopOver && <div className="h-[70vh] w-full overflow-y-auto">
 
-          <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
-              <ul className="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-styled-tab" data-tabs-toggle="#default-styled-tab-content" data-tabs-active-classes="text-purple-600 hover:text-purple-600 dark:text-purple-500 dark:hover:text-purple-500 border-purple-600 dark:border-purple-500" data-tabs-inactive-classes="dark:border-transparent text-gray-500 hover:text-gray-600 dark:text-gray-400 border-gray-100 hover:border-gray-300 dark:border-gray-700 dark:hover:text-gray-300" role="tablist">
+          <div className="mb-4 border-b border-gray-200 dar:border-gray-700">
+              <ul className="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-styled-tab" data-tabs-toggle="#default-styled-tab-content" data-tabs-active-classes="text-purple-600 hover:text-purple-600 dar:text-purple-500 dar:hover:text-purple-500 border-purple-600 dar:border-purple-500" data-tabs-inactive-classes="dar:border-transparent text-gray-500 hover:text-gray-600 dar:text-gray-400 border-gray-100 hover:border-gray-300 dar:border-gray-700 dar:hover:text-gray-300" role="tablist">
                 {
                   ['persons',  'institutions', 'scientific_collection', 'documents'].map(tableName => {
                     return  (
@@ -444,10 +445,10 @@ export default function Main() {
             <div className="">
               <div className="result-list">
                   <h5 className="text-[#1A56AE] font-semibold">Results</h5>
-                  <ul className="w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-none dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                      <li className="w-full px-4 py-2 border-b border-gray-200 rounded-t-lg dark:border-gray-600">Profile</li>
-                      <li className="w-full px-4 py-2 border-b border-gray-200 dark:border-gray-600">Settings</li>
-                      <li className="w-full px-4 py-2 border-b border-gray-200 dark:border-gray-600">Messages</li>
+                  <ul className="w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-none dar:bg-gray-700 dar:border-gray-600 dar:text-white">
+                      <li className="w-full px-4 py-2 border-b border-gray-200 rounded-t-lg dar:border-gray-600">Profile</li>
+                      <li className="w-full px-4 py-2 border-b border-gray-200 dar:border-gray-600">Settings</li>
+                      <li className="w-full px-4 py-2 border-b border-gray-200 dar:border-gray-600">Messages</li>
                       <li className="w-full px-4 py-2 rounded-b-lg">Download</li>
                   </ul>
               </div>
@@ -788,6 +789,8 @@ const InstitutionMarkers = ({ institutions, setActiveItem }) => {
   )
   
 }
+
+
 
 const ScientificCollectionMarkers = ({ collections, setActiveItem }) => {
   let fields = [
