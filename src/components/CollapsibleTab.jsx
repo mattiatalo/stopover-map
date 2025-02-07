@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { ChevronsDown } from 'lucide-react';
+import { ChevronsDown, X } from 'lucide-react';
 import { useState } from 'react';
 import classNames from 'classnames';
 
@@ -9,9 +9,9 @@ export default function CollapsibleTab(props) {
     const { position="top-right", collapseClass, collapseIcon } = props;
 
     // poistion of collapse toggle 
-    let openClass = isOpen ? 'top-0 shadow-none bg-transparent bg-white/0':'top-0 bg-white';
+    let openClass = isOpen ? 'top-0 shadow-none bg-white':'top-0 bg-white';
     const togglerClass = classNames(
-        'absolute shadow-md font-semibold text-gray-700 px-2 py-2 rounded-md text-sm cursor-pointer',
+        'absolute shadow-md font-semibold text-gray-700 px-2 py-2 rounded-md text-sm cursor-pointer bg-white',
         {
           'top-full right-0 mt-14': position === 'bottom-right',
           'top-full left-0 mt-14': position === 'bottom-left',
@@ -25,9 +25,9 @@ export default function CollapsibleTab(props) {
     // }
 
     return (
-        <div className={collapseClass}>
+        <div className={`${collapseClass} ${!isOpen ? '!w-12 h-12' : ""}` }>
             <div className={`${togglerClass} ${openClass}`} onClick={() => setIsOpen(!isOpen)}>
-                {isOpen ? <ChevronsDown className='text-gray-600'/> : collapseIcon }
+                {isOpen ? <X className='text-gray-600'/> : collapseIcon }
             </div>
 
             {isOpen && 

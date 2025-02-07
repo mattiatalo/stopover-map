@@ -4,7 +4,7 @@ import MainLayout from './MainLayout';
 import MainMap from './MainMap';
 import { getData } from '../services/data';
 import CollapsibleTab from '../components/CollapsibleTab';
-import { Bird, ChevronDown, ChevronUp, CircleDot, File, Files, Layers, LucideGitGraph, School, Users, X } from 'lucide-react';
+import { Bird, ChevronDown, ChevronRight, ChevronsRight, ChevronUp, CircleDot, File, Files, Layers, LucideGitGraph, School, Users, X } from 'lucide-react';
 
 // import { Novara } from "./data";
 import {Route  as Novara} from "./route";
@@ -477,150 +477,156 @@ export default function MainPage() {
                     </MainMap>
                 </div>
                 
-                <div className='absolute w-96 bg-white left-6 top-16 overflow-hidden z-20 rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]'>
+                <CollapsibleTab
+                    collapseIcon={<ChevronsRight className="text-gray-500"/>}
+                    collapseClass="absolute w-96 bg-white left-6 top-16 z-20 rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]"
+                >
+                    <div className='w-full bg-white left-6 top-16 overflow-hidden'>
 
-                    <div className="px-2 w-fit text-[24px] text-black w-full bg-white flex items-center py-4 rounded-xl">
-                        <span className="font-semibold capitalize">{t('stopovers')} ({targetStopOvers.length})</span>
-                    </div>
-
-                    <div className="tab-toggler rounded-[10px] w-full">
-                        <ul className="flex flex-wrap text-sm font-medium text-center text-gray-500 border-b border-t border-gray-200 w-full uppercase">
-                            <li className="flex-1">
-                                <a href="#" onClick={() => setActiveStopoverTab("list")} aria-current="page" 
-                                    className={`w-full inline-block p-2  ${ activeStopoverTab == "list" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-sm active dak:bg-gray-800 dak:text-blue-500`}
-                                >
-                                    {t('list')}
-                                </a>
-                            </li>
-                            <li className="flex-1">
-                                <a href="#"  onClick={() => setActiveStopoverTab("timeline")} 
-                                    className={`w-full inline-block p-2 ${ activeStopoverTab == "timeline" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-sm hover:text-gray-600 hover:bg-gray-50 dak:hover:bg-gray-800 dak:hover:text-gray-300`}
-                                >
-                                    {t('timeline')}
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div className="p-4 py-2 uppercase font-medium">
-                                
-                                <input 
-                                    type="text" 
-                                    placeholder={t('search_stopover')}
-                                    defaultValue={""}
-                                    onChange={(e) => {
-                                        setState({...state, query:e.target.value});
-                                    }}
-                                    className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
-                                />
-                            </div>
-
-                            <div className="p-4 py-2">
-                                <h5 className=''>{t('voyage_label')}</h5>
-                                <select name="voyage" id="voyage"
-                                    defaultValue={""}
-                                    onChange={(e) => {
-                                        setState({...state, activeVoyage:e.target.value});
-                                    }}
-                                    className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
-                                >
-                                    <option value="" >{t('all_voyages')}</option>
-                                    {(voyages.map((voyage, i) => (<option key={i} value={voyage} style={{ background:(voyageColorCards[voyage] || "#fff")}}>{t(voyage) || voyage}</option>) ))}
-                                </select>
-                            </div>
-
-                    { activeStopoverTab == "timeline" ? <div className="relative text-white timeline-section bg-[#2B222D] w-full h-full overflow-hidden">
-                        <div className="timeline-header p-4">
-                            <div className="title font-semibold font-medium uppercase">
-                                {t('stopovers')}
-
-                                ({
-                                [...stopovers]
-                                // .filter(stopover => stopover['ARRIVAL DAY'] !== "N.A.")
-                                .filter(filterByDateRange).length
-                                })
-                            </div>
-                            <div className="range-slider my-3">
-                                {/* tick mark on different years, mover the toggler into search tab, preview tab (remove once the detail tab opens) */}
-                                {/* <RangeSlider className="bg-orange-400" id="range-slider"/> */}
-
-                                <Slider 
-                                    range  
-                                    onChange={handleSliderChange} 
-                                    marks={marks}
-                                    step={2}
-                                    max={64}
-                                    defaultValue={[0, 64]}
-                                />
-                            </div>
+                        <div className="px-2 w-fit text-[24px] text-black w-full bg-white flex items-center py-4 rounded-xl">
+                            <span className="font-semibold capitalize">{t('stopovers')} ({targetStopOvers.length})</span>
                         </div>
 
-                        <div className="timeline-body grid grid-cols-2 gap-2 p-6 h-[calc(50vh-217px)] overflow-auto">
-                            {
-                                [...targetStopOvers]
-                                    .filter(stopover => stopover['ARRIVAL DAY'] !== "N.A.")
-                                    .sort((a,b) => dayjs(a['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix() - dayjs(b['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix())
-                                    .filter(filterByDateRange)
-                                    .map((stopover,i) => (
-                                        <div key={i} className='cursor-pointer text-white text-sm bg-white w-full relative' onClick={() => handleStopoverClick(stopover)}>
-                                            <div className="absolute top-2 left-2 bg-white/80 text-black text-center uppercase p-1 text-xs font-normal">
-                                                {stopover['ARRIVAL DAY']}
-                                            </div>
-                                            <div className="absolute bottom-0 left-0 bg-black/50 w-full text-center uppercase">{stopover['STOPOVER']}</div>
-                                            {/* <img src={sc['FEATURED IMAGE']}  className='h-40'/> */}
-                                            <img src={stopover['IMAGES']} className="h-40 w-full" />
-                                        </div> )
-                                    )
-                            }
-                        </div>
-                    </div> : "" }
-
-                    { activeStopoverTab == "list" ? <div
-                        className="stopover-cards bg-white w-full"
-                    >
-                        
-
-                        <div className="py-2 h-auto w-full overflow-hidden">
-
-                            <ul className="w-full h-[calc(50vh-140px)] overflow-y-auto overflow-x-hidden text-sm font-medium text-gray-900 rounded-none dak:bg-gray-700">
-                                {
-                                    Object.keys(groupedStopOvers).map((mainPlace,i) => {
-                                        if(groupedStopOvers[mainPlace].length > 1) {
-                                            return (
-                                            <Accordion title={language == "it" ? getItalianName(mainPlace):  mainPlace} key={mainPlace}>
-                                                {
-                                                groupedStopOvers[mainPlace].map(stopOver => {
-                                                    return (
-                                                        <StopOverCard 
-                                                            key={`${stopOver['STOPOVER']}-${i}`}  
-                                                            stopOver={stopOver} 
-                                                            onClick={() => handleStopoverClick(stopOver)} 
-                                                            activeStopOver={activeStopOver} 
-                                                        />
-                                                    )
-                                                    
-                                                })
-                                            }
-                                            </Accordion>)
-                                        }
-
-                                        let stopOver = groupedStopOvers[mainPlace][0];
-
-                                        return (
-                                            <StopOverCard 
-                                                key={`${stopOver['STOPOVER']}-${i}`}  
-                                                stopOver={stopOver} 
-                                                onClick={() => handleStopoverClick(stopOver)} 
-                                                activeStopOver={activeStopOver} 
-                                            />
-                                        )
-                                    })
-                                }
+                        <div className="tab-toggler rounded-[10px] w-full">
+                            <ul className="flex flex-wrap text-sm font-medium text-center text-gray-500 border-b border-t border-gray-200 w-full uppercase">
+                                <li className="flex-1">
+                                    <a href="#" onClick={() => setActiveStopoverTab("list")} aria-current="page" 
+                                        className={`w-full inline-block p-2  ${ activeStopoverTab == "list" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-sm active dak:bg-gray-800 dak:text-blue-500`}
+                                    >
+                                        {t('list')}
+                                    </a>
+                                </li>
+                                <li className="flex-1">
+                                    <a href="#"  onClick={() => setActiveStopoverTab("timeline")} 
+                                        className={`w-full inline-block p-2 ${ activeStopoverTab == "timeline" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-sm hover:text-gray-600 hover:bg-gray-50 dak:hover:bg-gray-800 dak:hover:text-gray-300`}
+                                    >
+                                        {t('timeline')}
+                                    </a>
+                                </li>
                             </ul>
                         </div>
-                    </div> : ""}
 
-                </div>
+                        <div className="p-4 py-2 uppercase font-medium">
+                                    
+                                    <input 
+                                        type="text" 
+                                        placeholder={t('search_stopover')}
+                                        defaultValue={""}
+                                        onChange={(e) => {
+                                            setState({...state, query:e.target.value});
+                                        }}
+                                        className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
+                                    />
+                                </div>
+
+                                <div className="p-4 py-2">
+                                    <h5 className=''>{t('voyage_label')}</h5>
+                                    <select name="voyage" id="voyage"
+                                        defaultValue={""}
+                                        onChange={(e) => {
+                                            setState({...state, activeVoyage:e.target.value});
+                                        }}
+                                        className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
+                                    >
+                                        <option value="" >{t('all_voyages')}</option>
+                                        {(voyages.map((voyage, i) => (<option key={i} value={voyage} style={{ background:(voyageColorCards[voyage] || "#fff")}}>{t(voyage) || voyage}</option>) ))}
+                                    </select>
+                                </div>
+
+                        { activeStopoverTab == "timeline" ? <div className="relative text-white timeline-section bg-[#2B222D] w-full h-full overflow-hidden">
+                            <div className="timeline-header p-4">
+                                <div className="title font-semibold font-medium uppercase">
+                                    {t('stopovers')}
+
+                                    ({
+                                    [...stopovers]
+                                    // .filter(stopover => stopover['ARRIVAL DAY'] !== "N.A.")
+                                    .filter(filterByDateRange).length
+                                    })
+                                </div>
+                                <div className="range-slider my-3">
+                                    {/* tick mark on different years, mover the toggler into search tab, preview tab (remove once the detail tab opens) */}
+                                    {/* <RangeSlider className="bg-orange-400" id="range-slider"/> */}
+
+                                    <Slider 
+                                        range  
+                                        onChange={handleSliderChange} 
+                                        marks={marks}
+                                        step={2}
+                                        max={64}
+                                        defaultValue={[0, 64]}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="timeline-body grid grid-cols-2 gap-2 p-6 h-[calc(50vh-217px)] overflow-auto">
+                                {
+                                    [...targetStopOvers]
+                                        .filter(stopover => stopover['ARRIVAL DAY'] !== "N.A.")
+                                        .sort((a,b) => dayjs(a['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix() - dayjs(b['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix())
+                                        .filter(filterByDateRange)
+                                        .map((stopover,i) => (
+                                            <div key={i} className='cursor-pointer text-white text-sm bg-white w-full relative' onClick={() => handleStopoverClick(stopover)}>
+                                                <div className="absolute top-2 left-2 bg-white/80 text-black text-center uppercase p-1 text-xs font-normal">
+                                                    {stopover['ARRIVAL DAY']}
+                                                </div>
+                                                <div className="absolute bottom-0 left-0 bg-black/50 w-full text-center uppercase">{stopover['STOPOVER']}</div>
+                                                {/* <img src={sc['FEATURED IMAGE']}  className='h-40'/> */}
+                                                <img src={stopover['IMAGES']} className="h-40 w-full" />
+                                            </div> )
+                                        )
+                                }
+                            </div>
+                        </div> : "" }
+
+                        { activeStopoverTab == "list" ? <div
+                            className="stopover-cards bg-white w-full"
+                        >
+                            
+
+                            <div className="py-2 h-auto w-full overflow-hidden">
+
+                                <ul className="w-full h-[calc(50vh-140px)] overflow-y-auto overflow-x-hidden text-sm font-medium text-gray-900 rounded-none dak:bg-gray-700">
+                                    {
+                                        Object.keys(groupedStopOvers).map((mainPlace,i) => {
+                                            if(groupedStopOvers[mainPlace].length > 1) {
+                                                return (
+                                                <Accordion title={language == "it" ? getItalianName(mainPlace):  mainPlace} key={mainPlace}>
+                                                    {
+                                                    groupedStopOvers[mainPlace].map(stopOver => {
+                                                        return (
+                                                            <StopOverCard 
+                                                                key={`${stopOver['STOPOVER']}-${i}`}  
+                                                                stopOver={stopOver} 
+                                                                onClick={() => handleStopoverClick(stopOver)} 
+                                                                activeStopOver={activeStopOver} 
+                                                            />
+                                                        )
+                                                        
+                                                    })
+                                                }
+                                                </Accordion>)
+                                            }
+
+                                            let stopOver = groupedStopOvers[mainPlace][0];
+
+                                            return (
+                                                <StopOverCard 
+                                                    key={`${stopOver['STOPOVER']}-${i}`}  
+                                                    stopOver={stopOver} 
+                                                    onClick={() => handleStopoverClick(stopOver)} 
+                                                    activeStopOver={activeStopOver} 
+                                                />
+                                            )
+                                        })
+                                    }
+                                </ul>
+                            </div>
+                        </div> : ""}
+
+                    </div>
+
+                </CollapsibleTab>
 
 
 
@@ -640,7 +646,7 @@ export default function MainPage() {
                 }
             
                 <CollapsibleTab
-                    collapseIcon={<Layers className="text-gray-500"/>}
+                    collapseIcon={<ChevronsRight className="text-gray-500"/>}
                     collapseClass="layer-cards absolute z-20 left-0 right-0 mx-auto w-[500px] bottom-0 min-w-[40px] min-h-[40px] hidden"
                 >
                     <div className="flex space-x-2 py-3 flex px-3 bg-white/40 rounded-t-[5px] shadow-round">
@@ -711,7 +717,7 @@ export default function MainPage() {
 
                 <CollapsibleTab
                     position="top-left"
-                    collapseIcon={<LucideGitGraph className="text-gray-500"/>}
+                    collapseIcon={<ChevronsRight className="text-gray-500"/>}
                     collapseClass="summary-cards absolute z-20 left-6 bottom-4  min-w-[40px] min-h-[40px]"
                 >
                     <div className="space-x-0 py-2 flex px-3 bg-white rounded-[25px] shadow-round">
