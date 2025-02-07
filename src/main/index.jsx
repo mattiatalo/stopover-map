@@ -481,7 +481,7 @@ export default function MainPage() {
                     collapseIcon={<ChevronsRight className="text-gray-500"/>}
                     collapseClass="absolute w-96 bg-white left-6 top-16 z-20 rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]"
                 >
-                    <div className='w-full bg-white left-6 top-16 overflow-hidden'>
+                    <div className='w-full bg-white left-6 top-16 overflow-hidden rounded-[10px]'>
 
                         <div className="px-2 w-fit text-[24px] text-black w-full bg-white flex items-center py-4 rounded-xl">
                             <span className="font-semibold capitalize">{t('stopovers')} ({targetStopOvers.length})</span>

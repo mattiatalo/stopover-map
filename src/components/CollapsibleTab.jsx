@@ -25,7 +25,7 @@ export default function CollapsibleTab(props) {
     // }
 
     return (
-        <div className={`${collapseClass} ${!isOpen ? '!w-12 h-12' : ""}` }>
+        <div className={`collapse-tab ${collapseClass} ${!isOpen ? '!w-12 h-12' : ""}` }>
             <div className={`${togglerClass} ${openClass}`} onClick={() => setIsOpen(!isOpen)}>
                 {isOpen ? <X className='text-gray-600'/> : collapseIcon }
             </div>

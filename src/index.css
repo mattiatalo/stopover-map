@@ -218,6 +218,10 @@ div.mapboxgl-popup {
   }
 }
 
+.collapse-tab {
+  transition: 0.4s all;
+}
+
 
 .general-info img:hover {
   filter: brightness(0.8);
