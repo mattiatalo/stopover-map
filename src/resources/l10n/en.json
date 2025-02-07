@@ -1,9 +1,10 @@
 {
     "list":"List",
     "timeline":"timeline",
-    "voyage_label":"Select Voyage",
+    "voyage_label":"Select voyage",
     "stopovers":"stopovers",
-    "all_voyages":"all voyages",
+    "stopover":"stopover",
+    "all_voyages":"All voyages",
     "specimens":"specimens",
     "specimen":"specimens",
     "docs":"docs",
@@ -15,7 +16,7 @@
     "resources":"resources",
     "role description":"Role Description",
     "show spline":"Show Spline",
-    "search_stopover":"Search Stopover",
+    "search_stopover":"Search stopover",
     "state_of_preservation":"State of preservation", 
     "collection_date":"Collection date", 
     "collection_place":"Collection place",  
@@ -46,6 +47,7 @@
 
 
     "Novara circumnavigation voyage":"Novara circumnavigation voyage", 
+    "Whole circumnavigation":"Whole circumnavigation",
     "Commodore Wüllerstorf-Urbair and staff in Canton":"Commodore Wüllerstorf-Urbair and staff in Canton", 
     "Novara naturalists in Macao":"Novara naturalists in Macao", 
     "Hochstetter's New Zealand mission (8/01-2/10/1859)":"Hochstetter's New Zealand mission (8/01-2/10/1859)", 

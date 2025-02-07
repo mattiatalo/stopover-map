@@ -4,11 +4,14 @@
 import { Navbar } from "flowbite-react";
 import { CloudLightning, Layers, Map, MapPin, Menu, Search } from "lucide-react";
 import LanguageDiv from "./LanguageDiv";
+import { useLocalization } from "./LocalizationProvider";
 
 export function SimpleNavbar() {
+  const { language } = useLocalization();
+
   return (
     <Navbar fluid className="p-3 shadow-md bg-[#191919] z-50 w-full">
-      <a id="link-1880-19" className="ct-link flex" href="https://globalsearoutes.net/">
+      <div id="link-1880-19" className="ct-link flex items-center text-[#fff]" href="https://globalsearoutes.net/">
 
         <img 
           id="image-1886-385" alt="" 
@@ -21,9 +24,9 @@ export function SimpleNavbar() {
           src="/logo-comune-white.png" 
           className="ct-image w-12 h-16"
         /> */}
-
-       
-      </a>
+        { language !== "it" ? <h3 className="text-xl mx-3 font-bold"> GeoChronicles of the Novara: <span className="font-normal">Mapping the 1857–1859 Expedition</span> </h3>
+        : <h3 className="text-xl mx-3 font-bold">Mappatura georeferenziata della spedizione della Novara <span className="font-normal"> (1857-1859)</span> </h3> }      
+      </div>
       <Navbar.Toggle />
       <Navbar.Collapse>
         <div className="button-list flex space-x-4 hidden">

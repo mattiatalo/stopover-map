@@ -6,8 +6,8 @@ export default function ImageViewer(props) {
     const [showModal, setShowModal] = useState(props.showImage ? false : true);
 
     return (
-        <div className='w-full relative'>
-            { props.showImage ? <img src={props.imageUrl} className={props.className || "h-40 w-full"} onClick={() => setShowModal(true)}/> : ""}
+        <div className='w-full relative overflow-hidden rounded-[10px]'>
+            { props.showImage ? <img src={props.imageUrl} className={props.className + ` h-auto w-full rounded-[10px] ${props.cnName}`} onClick={() => setShowModal(true)}/> : ""}
             <div 
                 id="static-modal" 
                 data-modal-backdrop="static" 
@@ -20,8 +20,8 @@ export default function ImageViewer(props) {
                     <span className="sr-only">Close modal</span>
                 </button>
 
-                <div className="relative p-4 w-auto mx-auto top-16 flex items-center justify-center">
-                    <img src={props.imageUrl} className="h-auto max-h-[80vh]" />
+                <div className="relative p-2 w-auto top-16 flex items-center justify-center">
+                    <img src={props.imageUrl} className={`h-auto max-h-[80vh] w-auto`} />
                 </div>
             </div>
         </div>

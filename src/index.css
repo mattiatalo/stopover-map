@@ -218,6 +218,30 @@ div.mapboxgl-popup {
   }
 }
 
+
+.general-info img:hover {
+  filter: brightness(0.8);
+  transform: scale(1.1);
+  cursor: pointer;
+  transition: 0.4s;
+}
+
+.general-info img {
+  transition: 0.4s; 
+  filter: brightness(1);
+  transform: scale(1);
+}
+
+
+.zoom-in:hover {
+  filter: brightness(0.8);
+  transform: scale(1.1);
+  background-color: #000 !important;
+}
+
+.animation-spin {
+  animation:spin 1.8s linear infinite !important;
+}
 /* width */
 ::-webkit-scrollbar {
   width: 5px;

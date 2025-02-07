@@ -26,35 +26,39 @@ import Table from '../components/Table';
 import Carousel from '../components/Carousel';
 import { useLocalization, useTranslation } from '../components/LocalizationProvider';
 import ImageViewer from '../components/ImageViewer';
-import { RiArrowDownLine, RiArrowDownSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';
+import { RiArrowDownLine, RiArrowDownSLine, RiArrowLeftSLine, RiArrowRightSLine, RiEarthFill, RiGlobalLine } from '@remixicon/react';
 import Charts from './charts';
+import { DocumentsDiv, InstitutionDiv, PersonsDiv, StopOverDiv } from '../components/InfoDivs';
 
 dayjs.extend(customParseFormat);
 
 const marks = {
-    0:1856,
-    24:1857,
-    48:1858,
-    72:1859,
-    96:1860
+    0:1857,
+    24:1858,
+    48:1859,
 }
 
 const sliderValuesToDates = (values) => {
     let [min, max] = values;
-    let minYear = 1856;
+    let minYear = 1857;
 
     let date = new Date(`${minYear}`).valueOf();
     // console.log(date);
     let minDate = new Date(date + 1317600000 * min);
     let maxDate = new Date(date + 1317600000 * max);
 
-    // console.log(minDate.toISOString())
-    // console.log(maxDate.toISOString());
 
     return [minDate, maxDate]
 }
 
-console.log(Novara);
+const voyageColorCards = {
+    "Commodore Wüllerstorf-Urbair and staff in Canton":'aliceblue',
+    "Novara naturalists in Macao":'#f5f5dc',
+    "Hochstetter's New Zealand mission (8/01-2/10/1859)":"#EAEEE9",
+    "Hochstetter's return journey (2/10/1859-9/01/1860)" : "#F8F6F0",
+    "Scherzer's return journey (16/05-1/08/1859)":"#F8F8FF"
+};
+
 export default function MainPage() {
     const [isLoaded, setIsLoadied] = useState(false)
     const [ activeStopOver, setActiveStopOver ] = useState(null);
@@ -80,7 +84,7 @@ export default function MainPage() {
     const [activeStopoverTab, setActiveStopoverTab] = useState("list");
 
     const [dateFilter, setDateFilter] = useState({
-        minDate:new Date("1856"),
+        minDate:new Date("1857"),
         maxDate:new Date("1860")
     })
 
@@ -110,7 +114,7 @@ export default function MainPage() {
     
         // update the stopover
         setActiveStopOver(stopOver);
-        setActiveTab("stopovers");
+        setActiveTab("stopover");
         setActiveItem("");
         setActiveLink("");
         setLayerTabOpen(false);
@@ -134,7 +138,7 @@ export default function MainPage() {
 
 
         resources.forEach(resource => {
-            let info = data[resource].map(entry => ({ ...entry, category:resource }));
+            let info = data[resource].map((entry,i) => ({id:i, ...entry, category:resource }));
 
             allData = [...allData, ...info];
         });
@@ -241,7 +245,25 @@ export default function MainPage() {
           zoom: 1.8
         });
     
-      }
+    }
+
+
+    const getItalianName = (mainPlace) => {
+        let stopOver = stopovers.find(stopOver => stopOver['MAIN PLACE'] == mainPlace);
+
+        return stopOver['ITA_MAIN PLACE'];
+    }
+
+    useEffect(() => {
+        if(activeItem) {
+            let [latitude, longitude] = activeItem.info['COORDINATES'];
+
+            mapRef.current.flyTo({
+                center:[longitude, latitude],
+                zoom: 11
+            });
+        }
+    }, [activeItem])
 
     const groupedStopOvers = targetStopOvers.reduce((a,b) => {
         let mainPlace = b['MAIN PLACE'];
@@ -257,53 +279,113 @@ export default function MainPage() {
         return a;
     }, {});
 
+    const getCategoryColor = (category) => {
+        let colors = {
+            "stopovers":"red",
+            "persons":"orange",
+            "documents":"#5F9EA0",
+            "institutions":"grey",
+            "scientific_specimen":"green"
+        }
+
+        return colors[category];
+    }
+
+    
+    // const [currentIndex, setCurrentIndex] = useState(-1);
+    let currentIndex = useMemo(() => {
+        return activeStopOver ? targetStopOvers.findIndex(stopOver => stopOver.id == activeStopOver.id) : -1;
+    }, [activeStopOver, targetStopOvers])
+
+    const nextIndex = () => {
+        if(currentIndex < targetStopOvers.length - 1) {
+            handleStopoverClick(targetStopOvers[currentIndex + 1])
+        } else {
+            handleStopoverClick(targetStopOvers[0])
+        }
+    }
+
+    const prevIndex = () => {
+        if(currentIndex == 0) {
+            handleStopoverClick(targetStopOvers[targetStopOvers.length -1])
+        } else {
+            handleStopoverClick(targetStopOvers[currentIndex-1])
+        }
+    }
+
+
     const tabClassName = `tab flex items-center px-1 font-semibold text-xs cursor-pointer hover:bg-gray-400 hover:text-white py-1`;
     
+    // close and open panels
     return (
         <MainLayout>
             { isDataLoading && <div className='absolute z-[60] top-0 left-0 w-full bg-black/80 h-full flex items-center justify-center'>
-                <div className=" bg-white p-2 rounded-md flex flex flex-col items-center">
+                <div className=" bg-white/0 p-2 rounded-md flex flex flex-col items-center text-white">
 
-                    <div className="loading-bar-background">
+                    {/* <div className="loading-bar-background">
                         <div className="loading-bar" style={{ width: `${downloadProgress}%`}}></div>
+                    </div> */}
+
+                    <div className="images relative h-40 w-40 flex items-center justify-center">
+                        <img src="/icons/freeze.png" alt=""  className='absolute top-8 right-12 h-16 w-16'/>
+                        <img src="/icons/rotate.png" alt=""  className='absolute top-0 h-32 w-32 animation-spin'/>
                     </div>
 
-                    Loading....
+                    Loading.... {downloadProgress}%
                 </div>    
             </div>}
              {activeImage && <ImageViewer imageUrl={activeImage} alt="" className='rounded-md w-full object-cover h-full' showImage={false} onClose={() => setActiveImage(null)} />}
             <div className="map-container relative flex w-full">
            
 
-            { activeStopOver ? <nav className="flex w-full absolute top-0 left-0 z-10 bg-white items-center justify-center" aria-label="Breadcrumb">
+             <nav className="flex w-full absolute top-0 left-0 z-10 bg-white items-center justify-center" aria-label="Breadcrumb">
                  <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse p-2">
                         <li className="inline-flex items-center">
-                            <a href="#" onClick={resetMap} className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dak:text-gray-400 dak:hover:text-white">
-                                <svg className="w-3 h-3 me-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z"/>
-                                </svg>
-                                {t('globe')}
-                            </a>
+                            <div href="#" onClick={resetMap} className="inline-flex items-center text-sm font-medium text-gray-700">
+                                {/* <svg className="w-3 h-3 me-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z"/>
+                                </svg> */}
+
+
+                                <RiEarthFill />
+                                {/* {t('globe')} */}
+                            </div>
                         </li>
+                        { activeStopOver ?
                         <li>
-                            <div className="flex items-center">
+                            <div className="flex items-center relative">
                                 <svg className="rtl:rotate-180 w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
                                 </svg>
-                                <a href="#" className="ms-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ms-2 dak:text-gray-400 dak:hover:text-white">
-                                    {activeStopOver['MAIN PLACE']} <span className='text-red-300'>({activeStopOver['STOPOVER']})</span>
-                                </a>
+
+                                <div className=" mx-4 flex items-center">
+                                    <button onClick={() => prevIndex()} className="carousel btn z-10 top-[50%] left-0 bg-gray-100 text-black rounded-full p-1">
+                                        <RiArrowLeftSLine />
+                                    </button>
+
+                                    <div href="#" className="ms-1 mx-3 text-sm font-medium text-gray-700">
+                                        {activeStopOver['MAIN PLACE']} <span className='text-[#AD9A6D]'>({activeStopOver['STOPOVER']})</span>
+                                    </div>
+
+                                    <button onClick={() => nextIndex()} className="carousel btn z-10 top-[50%] right-0 bg-gray-100 text-black rounded-full p-1">
+                                        <RiArrowRightSLine />
+                                    </button>
+
+                                   
+                                   
+                                </div>
+                                
                             </div>
-                        </li>
+                        </li> : "" }
                     </ol>
 
-                    <div className='toggler relative mx-5'>
-                        <div className='flex cursor-pointer hover:bg-gray-100 focus:bg-gray-100 px-2 rounded-md border-[1px]' onClick={() => {setLayerTabOpen(!isLayerTabOpen)}}>
+                    { activeStopOver && <div className='toggler relative mx-5'>
+                        <div className=' hidden flex cursor-pointer hover:bg-gray-100 focus:bg-gray-100 px-2 rounded-md border-[1px]' onClick={() => {setLayerTabOpen(!isLayerTabOpen)}}>
                             {t('type')}
                             <RiArrowDownSLine  className='ml-3'/>
                         </div>
 
-                        { isLayerTabOpen && <div className="absolute top-12 bg-white">
+                        <div className="relative bg-white flex">
                             {
                                 ["institutions", "persons", "scientific_specimen", "documents"].map((item)  => {
                                     let label = item.split("_")[1] || item;
@@ -318,19 +400,23 @@ export default function MainPage() {
                                                     defaultChecked={activeLayers.includes(item)}
                                                     onChange={toggleActiveLayers} 
                                                 />
-                                                <div className={`${activeLayers.includes(item) ? 'bg-gray-300' : 'bg-gray-100' } p-1 rounded-full text-white`}>
+                                                <div 
+                                                    style={{
+                                                        background:activeLayers.includes(item) ? getCategoryColor(item) : ""
+                                                    }}
+                                                    className={`${activeLayers.includes(item) ? `` : 'bg-gray-100' } p-2 rounded-full text-white`}>
                                                     {getMarkerIcon(item)}   
                                                 </div>
-                                                <span className='mx-2 capitalize'>{t(label) || label}</span>
+                                                {/* <span className='mx-2 capitalize'>{t(label) || label}</span> */}
                                             </label>                                            
                                         </div>
                                     )
                                 })
                             }
-                        </div> }
+                        </div>
                         
-                    </div>
-                </nav> : "" }
+                    </div> }
+                </nav> 
 
                 <div className="w-full">
                     <MainMap projection={"globe"} basemap={"daks"} ref={mapRef}>
@@ -342,11 +428,12 @@ export default function MainPage() {
                         { activeStopOver  ? <Markers 
                             handleImageClick={setActiveImage}
                             hoverItem={hoverItem}
+                            activeItem={activeItem}
                             items={allData.filter(entry => activeLayers.includes(entry.category)).filter(entry => entry.stopover == activeStopOver['MAIN PLACE'])} 
                             setActiveItem={setActiveItem} 
                         /> : "" }
 
-                        {activeStopOver ? 
+                        {/* {activeStopOver ? 
                                 <Popup
                                     latitude={activeStopOver['COORDINATES'][0]} 
                                     longitude={activeStopOver['COORDINATES'][1]} 
@@ -357,7 +444,7 @@ export default function MainPage() {
                                     <div className="w-auto">
                                     <div className="flex items-cente gap-3 min-h-[100px]">
                                         <div className={`relative bg-gray-300 rounded-md min-w-[90px] h-inherit overflow-hidden`}>
-                                            {/* <div className="h-full bg-orange w-full object-cover" style={{ backgroundImage:`url(${activeEntry['IMAGES']})`}}></div> */}
+                                            {/* <div className="h-full bg-orange w-full object-cover" style={{ backgroundImage:`url(${activeEntry['IMAGES']})`}}></div> 
                                         {activeStopOver['IMAGES'] && <img src={activeStopOver['IMAGES']} alt="" className='object-fill h-full w-[90px]' />}
                                         </div>
                         
@@ -386,145 +473,154 @@ export default function MainPage() {
                                         </div>
                                     </div>
                                     </div>
-                                </Popup> : ""}
+                                </Popup> : ""} */}
                     </MainMap>
                 </div>
+                
+                <div className='absolute w-96 bg-white left-6 top-16 overflow-hidden z-20 rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]'>
 
-                <div className="tab-toggler absolute w-96 bg-white left-6 top-10 rounded-[10px] overflow-hidden z-20">
-                    <ul className="flex flex-wrap text-sm font-medium text-center text-gray-500 border-b border-gray-200 w-full uppercase">
-                        <li className="flex-1">
-                            <a href="#" onClick={() => setActiveStopoverTab("list")} aria-current="page" 
-                                className={`w-full inline-block p-2  ${ activeStopoverTab == "list" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-lg active dak:bg-gray-800 dak:text-blue-500`}
-                            >
-                                {t('list')}
-                            </a>
-                        </li>
-                        <li className="flex-1">
-                            <a href="#"  onClick={() => setActiveStopoverTab("timeline")} 
-                                className={`w-full inline-block p-2 ${ activeStopoverTab == "timeline" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-lg hover:text-gray-600 hover:bg-gray-50 dak:hover:bg-gray-800 dak:hover:text-gray-300`}
-                            >
-                                {t('timeline')}
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                { activeStopoverTab == "timeline" ? <div className="absolute text-white left-6 top-20 timeline-section z-30 bg-[#2B222D] w-96 overflow-hidden rounded-[10px] border-[4px] border-[#AD9A6D]">
-                    <div className="timeline-header p-4">
-                        <div className="title font-semibold font-medium uppercase">
-                            {t('stopovers')}
-
-                            ({
-                            [...stopovers]
-                            .filter(stopover => stopover['ARRIVAL DAY'] !== "N.A.")
-                            .filter(filterByDateRange).length
-                            })
-                        </div>
-                        <div className="range-slider my-3">
-                            {/* <RangeSlider className="bg-orange-400" id="range-slider"/> */}
-
-                            <Slider 
-                                range  
-                                onChange={handleSliderChange} 
-                                marks={marks}
-                                step={2}
-                                max={96}
-                                defaultValue={[0, 96]}
-                            />
-                        </div>
+                    <div className="px-2 w-fit text-[24px] text-black w-full bg-white flex items-center py-4 rounded-xl">
+                        <span className="font-semibold capitalize">{t('stopovers')} ({targetStopOvers.length})</span>
                     </div>
 
-                    <div className="timeline-body grid grid-cols-2 gap-2 p-6 h-[50vh] overflow-auto">
-                        {
-                            [...stopovers]
-                                .filter(stopover => stopover['ARRIVAL DAY'] !== "N.A.")
-                                .sort((a,b) => dayjs(a['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix() - dayjs(b['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix())
-                                .filter(filterByDateRange)
-                                .map((stopover,i) => (
-                                    <div key={i} className='cursor-pointer text-white text-sm bg-white w-full relative' onClick={() => handleStopoverClick(stopover)}>
-                                        <div className="absolute top-2 left-2 bg-black/20 text-black text-center uppercase p-1 text-xs font-normal">
-                                            {stopover['ARRIVAL DAY']}
-                                        </div>
-                                        <div className="absolute bottom-0 left-0 bg-black/50 w-full text-center uppercase">{stopover['STOPOVER']}</div>
-                                        {/* <img src={sc['FEATURED IMAGE']}  className='h-40'/> */}
-                                        <img src={stopover['IMAGES']} className="h-40 w-full" />
-                                    </div> )
-                                )
-                        }
-                    </div>
-                </div> : "" }
-
-                { activeStopoverTab == "list" ? <div
-                    className="stopover-cards absolute z-30 left-6 top-20 bg-white w-96 rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]"
-                >
-                    
-
-                    <div className="py-2 h-[65vh] w-full overflow-hidden">
-
-                        <div className="p-4 py-2 uppercase font-medium">
-                            <h5 className=''>{t('stopovers')} ({targetStopOvers.length})</h5>
-                            <input 
-                                type="text" 
-                                placeholder={t('search_stopover')}
-                                defaultValue={""}
-                                onChange={(e) => {
-                                    setState({...state, query:e.target.value});
-                                }}
-                                className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
-                            />
-                        </div>
-
-                        <div className="p-4 py-2">
-                            <h5 className='capitalize'>{t('voyage_label')}</h5>
-                            <select name="voyage" id="voyage"
-                                defaultValue={""}
-                                onChange={(e) => {
-                                    setState({...state, activeVoyage:e.target.value});
-                                }}
-                                className='capitalize bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
-                            >
-                                <option value="" >{t('all_voyages')}</option>
-                                {(voyages.map((voyage, i) => (<option key={i}>{t(voyage)}</option>) ))}
-                            </select>
-                        </div>
-
-                        <ul className="w-full h-[75%] overflow-y-auto overflow-x-hidden text-sm font-medium text-gray-900 rounded-none dak:bg-gray-700">
-                            {
-                                Object.keys(groupedStopOvers).map((mainPlace,i) => {
-                                    if(groupedStopOvers[mainPlace].length > 1) {
-                                        return (
-                                        <Accordion title={mainPlace} key={mainPlace}>
-                                            {
-                                            groupedStopOvers[mainPlace].map(stopOver => {
-                                                return (
-                                                    <StopOverCard 
-                                                        key={`${stopOver['STOPOVER']}-${i}`}  
-                                                        stopOver={stopOver} 
-                                                        onClick={() => handleStopoverClick(stopOver)} 
-                                                        activeStopOver={activeStopOver} 
-                                                    />
-                                                )
-                                                
-                                            })
-                                        }
-                                        </Accordion>)
-                                    }
-
-                                    let stopOver = groupedStopOvers[mainPlace][0];
-
-                                    return (
-                                        <StopOverCard 
-                                            key={`${stopOver['STOPOVER']}-${i}`}  
-                                            stopOver={stopOver} 
-                                            onClick={() => handleStopoverClick(stopOver)} 
-                                            activeStopOver={activeStopOver} 
-                                        />
-                                    )
-                                })
-                            }
+                    <div className="tab-toggler rounded-[10px] w-full">
+                        <ul className="flex flex-wrap text-sm font-medium text-center text-gray-500 border-b border-t border-gray-200 w-full uppercase">
+                            <li className="flex-1">
+                                <a href="#" onClick={() => setActiveStopoverTab("list")} aria-current="page" 
+                                    className={`w-full inline-block p-2  ${ activeStopoverTab == "list" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-sm active dak:bg-gray-800 dak:text-blue-500`}
+                                >
+                                    {t('list')}
+                                </a>
+                            </li>
+                            <li className="flex-1">
+                                <a href="#"  onClick={() => setActiveStopoverTab("timeline")} 
+                                    className={`w-full inline-block p-2 ${ activeStopoverTab == "timeline" ? 'bg-gray-100 text-blue-600' : ''} rounded-t-sm hover:text-gray-600 hover:bg-gray-50 dak:hover:bg-gray-800 dak:hover:text-gray-300`}
+                                >
+                                    {t('timeline')}
+                                </a>
+                            </li>
                         </ul>
                     </div>
-                </div> : ""}
+
+                    <div className="p-4 py-2 uppercase font-medium">
+                                
+                                <input 
+                                    type="text" 
+                                    placeholder={t('search_stopover')}
+                                    defaultValue={""}
+                                    onChange={(e) => {
+                                        setState({...state, query:e.target.value});
+                                    }}
+                                    className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
+                                />
+                            </div>
+
+                            <div className="p-4 py-2">
+                                <h5 className=''>{t('voyage_label')}</h5>
+                                <select name="voyage" id="voyage"
+                                    defaultValue={""}
+                                    onChange={(e) => {
+                                        setState({...state, activeVoyage:e.target.value});
+                                    }}
+                                    className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
+                                >
+                                    <option value="" >{t('all_voyages')}</option>
+                                    {(voyages.map((voyage, i) => (<option key={i} value={voyage} style={{ background:(voyageColorCards[voyage] || "#fff")}}>{t(voyage) || voyage}</option>) ))}
+                                </select>
+                            </div>
+
+                    { activeStopoverTab == "timeline" ? <div className="relative text-white timeline-section bg-[#2B222D] w-full h-full overflow-hidden">
+                        <div className="timeline-header p-4">
+                            <div className="title font-semibold font-medium uppercase">
+                                {t('stopovers')}
+
+                                ({
+                                [...stopovers]
+                                // .filter(stopover => stopover['ARRIVAL DAY'] !== "N.A.")
+                                .filter(filterByDateRange).length
+                                })
+                            </div>
+                            <div className="range-slider my-3">
+                                {/* tick mark on different years, mover the toggler into search tab, preview tab (remove once the detail tab opens) */}
+                                {/* <RangeSlider className="bg-orange-400" id="range-slider"/> */}
+
+                                <Slider 
+                                    range  
+                                    onChange={handleSliderChange} 
+                                    marks={marks}
+                                    step={2}
+                                    max={64}
+                                    defaultValue={[0, 64]}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="timeline-body grid grid-cols-2 gap-2 p-6 h-[calc(50vh-217px)] overflow-auto">
+                            {
+                                [...targetStopOvers]
+                                    .filter(stopover => stopover['ARRIVAL DAY'] !== "N.A.")
+                                    .sort((a,b) => dayjs(a['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix() - dayjs(b['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix())
+                                    .filter(filterByDateRange)
+                                    .map((stopover,i) => (
+                                        <div key={i} className='cursor-pointer text-white text-sm bg-white w-full relative' onClick={() => handleStopoverClick(stopover)}>
+                                            <div className="absolute top-2 left-2 bg-white/80 text-black text-center uppercase p-1 text-xs font-normal">
+                                                {stopover['ARRIVAL DAY']}
+                                            </div>
+                                            <div className="absolute bottom-0 left-0 bg-black/50 w-full text-center uppercase">{stopover['STOPOVER']}</div>
+                                            {/* <img src={sc['FEATURED IMAGE']}  className='h-40'/> */}
+                                            <img src={stopover['IMAGES']} className="h-40 w-full" />
+                                        </div> )
+                                    )
+                            }
+                        </div>
+                    </div> : "" }
+
+                    { activeStopoverTab == "list" ? <div
+                        className="stopover-cards bg-white w-full"
+                    >
+                        
+
+                        <div className="py-2 h-auto w-full overflow-hidden">
+
+                            <ul className="w-full h-[calc(50vh-140px)] overflow-y-auto overflow-x-hidden text-sm font-medium text-gray-900 rounded-none dak:bg-gray-700">
+                                {
+                                    Object.keys(groupedStopOvers).map((mainPlace,i) => {
+                                        if(groupedStopOvers[mainPlace].length > 1) {
+                                            return (
+                                            <Accordion title={language == "it" ? getItalianName(mainPlace):  mainPlace} key={mainPlace}>
+                                                {
+                                                groupedStopOvers[mainPlace].map(stopOver => {
+                                                    return (
+                                                        <StopOverCard 
+                                                            key={`${stopOver['STOPOVER']}-${i}`}  
+                                                            stopOver={stopOver} 
+                                                            onClick={() => handleStopoverClick(stopOver)} 
+                                                            activeStopOver={activeStopOver} 
+                                                        />
+                                                    )
+                                                    
+                                                })
+                                            }
+                                            </Accordion>)
+                                        }
+
+                                        let stopOver = groupedStopOvers[mainPlace][0];
+
+                                        return (
+                                            <StopOverCard 
+                                                key={`${stopOver['STOPOVER']}-${i}`}  
+                                                stopOver={stopOver} 
+                                                onClick={() => handleStopoverClick(stopOver)} 
+                                                activeStopOver={activeStopOver} 
+                                            />
+                                        )
+                                    })
+                                }
+                            </ul>
+                        </div>
+                    </div> : ""}
+
+                </div>
 
 
 
@@ -639,7 +735,7 @@ export default function MainPage() {
 
                     <div className="tab flex items-center px-1 border-l cursor-pointer" onClick={() => {setIsSummaryClick(true); setActiveTable('documents');}}>
                         <div className="icon mx-1">
-                            <File size={20} color="cyan" />
+                            <File size={20} color="#5f9ea0" />
                         </div>
                         <div className="count flex flex-col items-center justify-between">
                         <span className="text-xs text-gray-500 font-semibold mb-[-5px] capitalize">{t('docs')}</span>
@@ -664,7 +760,7 @@ export default function MainPage() {
                         <div className="text-xl font-bold text-gray-900 text-center w-full">
                             {
                             activeStopOver ?
-                            state.institutions.filter(doc => doc['TITLE / NAME']).filter(institution => {
+                            state.institutions.filter(institution => institution['INSTITUTION NAME']).filter(institution => {
                                 return (institution['MAIN PLACE'] && institution['MAIN PLACE'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase());
                             }).length
                             : state.institutions.filter(instiution => instiution['INSTITUTION NAME']).length
@@ -705,7 +801,7 @@ export default function MainPage() {
 
                     { activeItem  && <ActiveItemsCarousel 
                         activeItem={activeItem} 
-                        items={allData.filter(entry => entry.category == activeItem.table)} 
+                        items={activeStopOver ? allData.filter(entry => entry.stopover == activeStopOver['MAIN PLACE']).filter(entry => entry.category == activeItem.table) : allData.filter(entry => entry.category == activeItem.table)} 
                         setActiveItem={setActiveItem} setActiveLink={setActiveLink} 
                         isSpecimen={activeItem.table == "scientific_specimen"}
                         setShowSpline={setShowSpline}
@@ -723,10 +819,11 @@ export default function MainPage() {
 
 const Accordion = ({title, children}) => {
     const [isOpen, setIsOpen] = useState(true);
+    
 
     return(
         <div className='accordion'>
-            <button className='w-full flex justify-between bg-gray-0 p-2 rounded-md px-4 relative ml-6 w-[90%]' onClick={() => setIsOpen(!isOpen)}>
+            <button className='w-full flex justify-between bg-gray-0 p-2 rounded-md px-4 relative ml-6 w-[89%]' onClick={() => setIsOpen(!isOpen)}>
                 {title}
                 { isOpen ? <ChevronDown /> : <ChevronUp /> }
 
@@ -747,6 +844,9 @@ const StopOverCard = ({stopOver, onClick, activeStopOver}) => {
 
     return (
         <li 
+            style={{
+                background:(voyageColorCards[stopOver['VOYAGE VARIANTS']] || "#fff")
+            }}
             className="w-full flex px-4 text-xs rounded-t-lg items-center cursor-pointer hover:bg-gray-200"
             onClick={onClick}
         >
@@ -780,27 +880,45 @@ const StopOverCard = ({stopOver, onClick, activeStopOver}) => {
 
 const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActiveItem, setHoverItem, tableInfo, activeStopOver, setActiveLink}) => {
     const t = useTranslation();
-    return (
-        <div className="absolute z-50 bg-[#F1F0EE] w-[450px] right-[20px] h-[80vh] top-10 rounded-xl shadow-lg border-[3px] border-[#AD9A6D] overflow-hidden">
-            <div className="max-h-full h-full text-[#54595f] overflow-y-auto overflow-x-hidden bg-[#F8F1E5] ">
-                <button className="absolute right-6 top-4 cursor-pointer rounded-full border-[#E9E4D8] border-[5px] p-1 bg-[#AD9A6D] text-[#E9E4D8]" onClick={() => setActiveStopOver()}>
-                    <X size={22}/>
-                </button>
 
-                <div className="px-2 w-fit text-[24px] text-black w-full bg-white flex items-center py-4 rounded-xl">
-                  <span className="font-semibold capitalize">{t('details')} ({data.length})</span>
+    let colors = {
+        "stopovers":"red",
+        "persons":"orange",
+        "documents":"#5f9ea0",
+        "institutions":"grey",
+        "scientific_specimen":"green"
+    }
+
+    return (
+        <div className="absolute z-50 bg-[#F1F0EE] bg-white w-[450px] right-[20px] h-[calc(100vh-180px)] top-16 rounded-xl shadow-lg border-[3px] border-[#AD9A6D] overflow-hidden">
+            <div className="max-h-full h-full text-[#54595f] overflow-y-auto overflow-x-hidden bg-[#F8F1E5] ">
+                
+                <div className="flex items-center w-full bg-white">
+                    <div className="px-2 w-fit text-[24px] text-black w-full bg-white flex items-center py-4 rounded-t-xl">
+                        <span className="font-semibold capitalize">{t('details')} ({data.length})</span>
+                    </div>
+
+                    <button className="zoom-in cursor-pointer rounded-full border-[#E9E4D8] border-[5px] mx-2 p-1 bg-[#AD9A6D] text-[#E9E4D8]" onClick={() => setActiveStopOver()}>
+                        <X size={22}/>
+                    </button>
                 </div>
+                
+                
 
                 <div className=" h-[88%]">
                     <div className="border-b border-gray-200 dak:border-gray-700">
-                        <ul className="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-styled-tab" data-tabs-toggle="#default-styled-tab-content" data-tabs-active-classes="text-purple-600 hover:text-purple-600 dak:text-purple-500 dak:hover:text-purple-500 border-purple-600 dak:border-purple-500" data-tabs-inactive-classes="dak:border-transparent text-gray-500 hover:text-gray-600 dak:text-gray-400 border-gray-100 hover:border-gray-300 dak:border-gray-700 dak:hover:text-gray-300" role="tablist">
+                        <ul className="flex flex-wrap -mb-px text-[0.75rem] font-medium text-center py-2 bg-white" id="default-styled-tab" data-tabs-toggle="#default-styled-tab-content" data-tabs-active-classes="text-purple-600 hover:text-purple-600 dak:text-purple-500 dak:hover:text-purple-500 border-purple-600 dak:border-purple-500" data-tabs-inactive-classes="dak:border-transparent text-gray-500 hover:text-gray-600 dak:text-gray-400 border-gray-100 hover:border-gray-300 dak:border-gray-700 dak:hover:text-gray-300" role="tablist">
                             {
-                            ['stopovers', 'persons',  'institutions', 'scientific_specimen', 'documents'].map(tableName => {
+                            ['stopover', 'persons',  'institutions', 'scientific_specimen', 'documents'].map(tableName => {
                                 return  (
-                                <li key={tableName} className="mx-0" role="presentation">
+                                <li key={tableName} className="mx-0 pl-[8px] mb-3" role="presentation">
+                                     {/* <div className="></div> */}
                                     <button 
                                         onClick={() => setActiveTab(tableName)} 
-                                        className={`${tableName == activeTab ? 'text-[#191919] border-[#191919] bg-[#AD9A6D]' : ''} capitalize inline-block py-3 px-1 border-b-2`}
+                                        style={{
+                                            borderColor:colors[tableName]
+                                        }}
+                                        className={`${tableName == activeTab ? 'text-[#ddd] border-[#191919] bg-[#191919]' : 'bg-white'} "text-xs rounded-full border-[1px] p-1 px-2 w-fit w-20 border-black text-center capitalize`}
                                         id="profile-styled-tab"
                                         data-tabs-target="#styled-profile" 
                                         type="button" 
@@ -820,12 +938,13 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
                     <div className="h-[90%] p-1">
                         <div className="py-0 px-0 w-full">
                             {
-                                activeTab == "stopovers" && 
+                                activeTab == "stopover" && 
                                     <ActiveItemInfoModal 
                                         isStopOver={true}
                                         popupInfo={activeStopOver} 
                                         setActiveItem={setActiveItem} 
                                         setActiveLink={setActiveLink}
+                                        category="stopovers"
                                     />
                             }
 
@@ -851,6 +970,7 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
 }
 
 const SpecimenSplineModal = ({ activeItem, setShowSpline }) => {
+    console.log(activeItem);
     return(
       <Modal activeTab={activeItem.info['NAME']} toggleActiveTable={() => setShowSpline(false)} isOpen={true}>
         <iframe 
@@ -860,7 +980,7 @@ const SpecimenSplineModal = ({ activeItem, setShowSpline }) => {
     )
   }
 
-const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, setShowSpline }) => {
+const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, setShowSpline, paginationText }) => {
     const {language} = useLocalization();
     const t = useTranslation();
 
@@ -869,30 +989,47 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
         setActiveLink(e.target.href);
     }
 
+    let colors = {
+        "stopovers":"red",
+        "persons":"orange",
+        "documents":"#5f9ea0",
+        "institutions":"grey",
+        "scientific_specimen":"green"
+    }
     // console.log(popupInfo);
     // absolute right-0 top-[110px] rounded-xl border-[2px] border-[#000]
     return (
         <div 
             style={{ boxShadow:"0 -1px 20px 0 #ad9a6d"}} 
-            className=" z-50 bg-[#f1f0ee] w-[450px] right-5 h-[70vh] detail-modal"
+            className=" z-50 bg-[#f1f0ee] w-[450px] right-5 h-full detail-modal"
         >
-            <div className="flex w-full px-[2%] py-5 max-h-full space-x-2 text-[#54595f] overflow-y-auto overflow-x-hidden ">
-                <button 
-                    className="absolute right-6 top-2 cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" 
+            <div className="flex flex-col w-full p-[30px] max-h-full text-[#54595f] overflow-y-auto overflow-x-hidden ">
+                {/* <button 
+                    className="zoom-in absolute right-6 top-2 cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" 
                     onClick={() => setActiveItem(null)}
                 >
                     <X size={22} className='font-bold'/>
-                </button>
+                </button> */}
+
+                <div className="flex items-center w-full justify-between top-0 mb-4">
+                    <div className="shadow-md rounded-full border-[2px] border-[#191919] p-1 w-fit w-20 px-3 border-black text-md text-center uppercase">
+                        <span className="font-semibold">{language == "it" ? popupInfo["ITA_SUBJECT"] : popupInfo['SUBJECT']}</span>
+                    </div> 
+                    
+                    <div className='w-full text-center font-semibold'>
+                        <span>{paginationText}</span>
+                    </div>
+                    
+                    <button className="zoom-in cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
+                        <X size={24} className='font-bold text-white' fontWeight={900}/>
+                    </button>
+                </div>
   
               <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
-                <div className="shadow-md rounded-full mb-4 border-[2px] px-5 w-fit min-w-20 border-black text-lg text-center uppercase">
+                {/* <div className="shadow-md rounded-full mb-4 border-[2px] px-5 w-fit min-w-20 border-black text-lg text-center uppercase">
                   <span className="font-semibold">{language == "it" ? popupInfo["ITA_SUBJECT"] : popupInfo['SUBJECT']}</span>
-                </div>
+                </div> */}
 
-                { 
-                    popupInfo['SPLINE-CODE']  && 
-                    <button className="absolute right-20 top-4 bg-gray-300 rounded-md px-2 capitalize" onClick={() => setShowSpline(true)}>{t('show spline')}</button>
-                }
   
                 <div className="content h-full">
                   <div className="header-section flex flex-col">
@@ -907,9 +1044,17 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 
                     </h2>
 
-                    <div className="px-0 h-auto w-full">
+                    <div className="px-0 h-auto w-full relative">
                         {/* <img src={popupInfo['FEATURED IMAGE']} className="w-full"/> */}
-                        <ImageViewer imageUrl={popupInfo['FEATURED IMAGE']} className="w-full" showImage={true} onClose={console.log}/>
+                        <ImageViewer imageUrl={popupInfo['FEATURED IMAGE']} className="w-full" showImage={true} onClose={console.log} cnName="w-full" />
+
+                        { 
+                            popupInfo['SPLINE-CODE']  && 
+                            <button className="absolute right-4 bottom-4 bg-[#fff] rounded-md capitalize rounded-md p-0 w-16 h-16" onClick={() => setShowSpline(true)}>
+                                <img src="/3d_image.jpg" alt="" className='h-10 w-auto rounded-md' />
+                            </button>
+                        }
+
                     </div>
 
                     <div className="font-semibold">
@@ -1008,43 +1153,57 @@ const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, 
     const nextIndex = () => {
         if(currentIndex < items.length - 1) {
             setCurrentIndex(currentIndex + 1);
+            console.log(currentIndex + 1, items);
+            setActiveItem({ info:items[currentIndex + 1], table:activeItem.table })
         } else {
             setCurrentIndex(0);
+
+            setActiveItem({ info:items[0], table:activeItem.table })
         }
     }
 
     const prevIndex = () => {
         if(currentIndex == 0) {
+            // let indes = 
             setCurrentIndex(items.length -1);
+            setActiveItem({ info:items[items.length -1], table:activeItem.table })
         } else {
             setCurrentIndex(currentIndex - 1);
+            setActiveItem({ info:items[currentIndex-1], table:activeItem.table })
         }
     }
 
+    if(!activeItem) {
+        return (<div>Item Not Found</div>);
+    }
+
     return (
-        <div className='absolute right-0 top-[110px] max-h-[70vh] h-full border-[2px] border-[#000000] z-50 right-5 rounded-xl overflow-hidden'>
+        <div className='absolute right-0 top-[130px] h-[calc(80vh-55px)] border-[2px] border-[#000000] z-50 right-5 rounded-xl overflow-hidden'>
             {/* <Carousel items={items} currentIndex={currentIndex}> */}
 
-                <button onClick={() => nextIndex()} className="carousel btn absolute z-10 top-[50%] right-0 bg-white text-black rounded-full p-1">
-                    <RiArrowRightSLine />
+                <button onClick={() => nextIndex()} className="carousel border-[1px] border-[#AD9A6D] btn absolute z-10 top-[50%] right-[1px] bg-white text-black rounded-full p-0">
+                    <RiArrowRightSLine  size={28}/>
                 </button>
-                <button onClick={() => prevIndex()} className="carousel btn absolute z-10 top-[50%] left-0 bg-white text-black rounded-full p-1">
-                    <RiArrowLeftSLine />
+                <button onClick={() => prevIndex()} className="carousel border-[1px] border-[#AD9A6D] btn absolute z-10 top-[50%] left-[1px] bg-white text-black rounded-full p-0">
+                    <RiArrowLeftSLine  size={28}/>
                 </button>
 
 
               
                 { isSpecimen ? 
                     <ScientificCollectionModal 
-                        popupInfo={items[currentIndex]} 
+                        popupInfo={items[currentIndex] || activeItem.info} 
                         setActiveItem={setActiveItem} 
                         setActiveLink={setActiveLink} 
                         setShowSpline={setShowSpline}
+                        paginationText={`${currentIndex+1}/${items.length}`}
                     /> :
                     <ActiveItemInfoModal 
-                        popupInfo={items[currentIndex]} 
+                        popupInfo={items[currentIndex] || activeItem.info} 
                         setActiveItem={setActiveItem} 
                         setActiveLink={setActiveLink}
+                        category={activeItem?.table}
+                        paginationText={`${currentIndex+1}/${items.length}`}
                     /> 
                 }
             {/* </Carousel> */}
@@ -1053,22 +1212,22 @@ const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, 
 
 }
 
-const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOver=false }) => {
+const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOver=false, category, paginationText }) => {
     const t = useTranslation();
     const { language } = useLocalization();
 
     let colors = {
         "stopovers":"red",
         "persons":"orange",
-        "documents":"cyan",
+        "documents":"#5f9ea0",
         "institutions":"grey",
         "scientific_specimen":"green"
     }
 
 
     let fields = {
-        stopovers:['DEPATURE DAY', 'ARRIVAL DAY', 'DURATION (days)', 'VOYAGE VARIANTS', 'ANCHORAGE TYPOLOGY'],
-        institutions:['Director', "Foundation date", "Nature", ],
+        stopovers:['DEPARTURE DAY', 'ARRIVAL DAY', 'DURATION (days)', 'VOYAGE VARIANTS', 'ANCHORAGE TYPOLOGY'],
+        institutions:["Foundation date", 'Director',  "Nature"  ],
         documents:["MAIN COLLECTION PLACE", "SECONDARY COLLECTION PLACE", "ALTERNATIVE TITLE / NAME", "ENGLISH TRANSLATION", "FIRST AUTHOR", "SECOND AUTHOR",
             "TRANSLATED BY", "EDITED BY", "KIND OF SOURCE", "MEDIUM", "MEASURES / QUANTITY / FORMAT", "LANGUAGE", "YEAR  / DATE", "PUBLISHER / PRINTER", 
             "PERIOD", "MAIN LOCAL INSTITUTION INVOLVED", "MAIN LOCAL PERSON INVOLVED", "COLLECTING MODE", "CURRENT OWNER", "COLLECTION"
@@ -1084,37 +1243,85 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
     }
 
     // let description = (popupInfo['FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ROLE DESCRIPTION'] || popupInfo['DESCRIPTION'] || "");
-    const description = language == "it" ? 
-        (popupInfo['ITA_FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ITA_ROLE DESCRIPTION'] || popupInfo['ITA_DESCRIPTION'] || "") :
-        (popupInfo['FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ROLE DESCRIPTION'] || popupInfo['DESCRIPTION'] || "");
+    // const description = language == "it" ? 
+    //     (popupInfo['ITA_FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ITA_ROLE DESCRIPTION'] || popupInfo['ITA_DESCRIPTION'] || "") :
+    //     (popupInfo['FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ROLE DESCRIPTION'] || popupInfo['DESCRIPTION'] || "");
 
 
-    let personsName = "";
-    personsName += popupInfo['LAST NAME'] == "N. A." ? "" : popupInfo['LAST NAME'];
-    personsName += popupInfo['FIRST NAME'] == "N. A." ? "" : " " + popupInfo['FIRST NAME'];
+    // let personsName = "";
+    // personsName += popupInfo['LAST NAME'] == "N. A." ? "" : popupInfo['LAST NAME'];
+    // personsName += popupInfo['FIRST NAME'] == "N. A." ? "" : " " + popupInfo['FIRST NAME'];
+
+    if(category == "stopovers") {
+        return <StopOverDiv 
+            popupInfo={popupInfo} 
+            setActiveItem={setActiveItem} 
+            setActiveLink={setActiveLink}
+            category={popupInfo.category}
+            onLinkClick={onLinkClick}
+        />
+    }
 
     return (
         <div 
             style={{boxShadow:  !isStopOver? "0 -1px 20px 0 #ad9a6d" : "" }}
-            className={`detail-modal ${ !isStopOver ? 'overflow-y-auto h-full max-h-[70vh] w-[450px] rounded' : ''} bg-[#f1f0ee] `}
+            className={`detail-modal ${ !isStopOver ? 'overflow-y-auto h-full w-[445px] rounded' : ''} bg-[#f1f0ee] `}
         >
-            <div className={`flex w-full px-[2%] py-5 max-h-full ${ !isStopOver ? 'space-x-2' : ''} text-[#54595f] overflow-y-auto overflow-x-hidden`}>
-  
-              { !isStopOver ? <button className="absolute right-6 top-2 cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
-                <X size={24} className='font-bold text-white' fontWeight={900}/>
-              </button> : "" }
+            <div className={`flex flex-col w-full px-[30px] py-[30px] max-h-full ${ !isStopOver ? 'space-x-0' : ''} text-[#54595f] overflow-y-auto overflow-x-hidden`}>
 
-              
-  
-               <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
-               { (isStopOver && popupInfo['MAIN PLACE']) && <div className="border-b border-gray-300 w-full text-left text-xl">
-                    { popupInfo['MAIN PLACE']} ({popupInfo['STOPOVER']})
-                    { popupInfo['ARRIVAL DAY'] && popupInfo['ARRIVAL DAY'] !== "N.A." ? <div className='text-[12px] text-gray-400'>
-                        {t('date')}: {popupInfo['ARRIVAL DAY']} - {popupInfo['DEPARTURE DAY']}
-                    </div> : ""}
-                </div> } 
+                <div className="flex items-center w-full justify-between top-0 mb-5">
+                    <div className="flex justify-start flex-1"> 
+                        { popupInfo.category  && <div className="shadow-md  rounded-full border-[1px] px-2 border-black text-center uppercase" style={{ borderColor: colors[popupInfo.category]}}>
+                            <span className="font-semibold" >{popupInfo.category}</span>
+                        </div> }
+                    </div>
+                     
+                    
+                    <div className='w-full text-center font-semibold flex-1 '>
+                        <span>{paginationText}</span>
+                    </div>
+                    
+                    <div className="flex-1 items-end flex justify-end">
+                        <button className="  zoom-in cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
+                            <X size={24} className='font-bold text-white' fontWeight={900}/>
+                        </button>
+                    </div>
+                    
+                </div>
+                             
 
+                { category == 'institutions' && 
+                    <InstitutionDiv  
+                        popupInfo={popupInfo} 
+                        setActiveItem={setActiveItem} 
+                        setActiveLink={setActiveLink}
+                        category={popupInfo.category}
+                        onLinkClick={onLinkClick}
+                    /> 
+                }
 
+                { category == 'persons' && 
+                    <PersonsDiv 
+                        popupInfo={popupInfo} 
+                        setActiveItem={setActiveItem} 
+                        setActiveLink={setActiveLink}
+                        category={popupInfo.category}
+                        onLinkClick={onLinkClick}
+                    /> 
+                }
+
+                { category == 'documents' && 
+                    <DocumentsDiv
+                        popupInfo={popupInfo} 
+                        setActiveItem={setActiveItem} 
+                        setActiveLink={setActiveLink}
+                        category={popupInfo.category}
+                        onLinkClick={onLinkClick}
+                    /> 
+                }
+
+               {/* { !['institutions', 'persons', 'documents'].includes(category) && <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
+               
                 { popupInfo.category  && <div className="shadow-md rounded-full mb-4 mt-2 border-[1px] px-5 w-fit min-w-20 border-black text- text-center uppercase" style={{ borderColor: colors[popupInfo.category]}}>
                     <span className="font-semibold" >{popupInfo.category}</span>
                 </div> }
@@ -1128,26 +1335,22 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
                 <div className="content h-full">
                   <div className="header-section flex flex-col">
                     <h2 className="text-[#363636] text-[1.5em]">
-                        <strong>{popupInfo['NAME'] || popupInfo['TITLE / NAME'] || (`${popupInfo['FIRST NAME'] ? personsName : "" }`) || popupInfo['INSTITUTION NAME']}</strong>
-                        
-
-                        {/* <span>
-                            { language == "it" ? popupInfo['ITA_MAIN PLACE'] : popupInfo['MAIN PLACE']} ({ language == "it" ? popupInfo['ITA_MAIN PLACE'] : popupInfo['MAIN PLACE']})
-                        </span> */}
-
-
-                       
+                        <strong>{popupInfo['NAME'] || popupInfo['TITLE / NAME'] || (`${popupInfo['FIRST NAME'] ? personsName : "" }`) || popupInfo['INSTITUTION NAME']}</strong>                       
   
-                    {/* <h3 className="ct-headline text-[#363636] mb-2 text-[1.3em] py-0"> */}
+                    {/* <h3 className="ct-headline text-[#363636] mb-2 text-[1.3em] py-0"> 
                       <span  className="ct-span">
                         <p>
                           <em className="italic">{popupInfo['SCIENTIFIC NAME']}</em></p>
                       </span>
                     </h2>
 
+                    {popupInfo['ITA_MAIN PLACE'] && <div>
+                            { language == "it" ? popupInfo['ITA_MAIN PLACE'] : popupInfo['MAIN PLACE']} ({ language == "it" ? popupInfo['ITA_MAIN PLACE'] : popupInfo['MAIN PLACE']})
+                    </div> }
+
                     <div className="px-0 h-auto w-full">
                         {/* {popupInfo['FEATURED IMAGE'] && <img src={popupInfo['FEATURED IMAGE']} alt="" className='h-auto' />}
-                        {popupInfo['IMAGE'] && <img src={popupInfo['IMAGE']} alt="" className='h-auto' />} */}
+                        {popupInfo['IMAGE'] && <img src={popupInfo['IMAGE']} alt="" className='h-auto' />} 
 
                         {popupInfo['FEATURED IMAGE'] && <ImageViewer imageUrl={popupInfo['FEATURED IMAGE']} alt="" className='h-auto' showImage={true} onClose={console.log}/>}
                         {popupInfo['IMAGE'] && <ImageViewer imageUrl={popupInfo['IMAGE']} alt="" className='h-auto' showImage={true} onClose={console.log}/>}
@@ -1158,13 +1361,7 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
                             {language == "it" ? popupInfo['ITA_CAPTION'] : popupInfo['CAPTION']}
                         </figcaption>
                     </div>
-                    <hr className='mt-3 border-black'/>
-                    
-  
-                    {/* <h3 className="ct-headline text-xl color-dak mb-6 Nomenclature">
-                      <span className="ct-span"><em className="italic">Ardea candidissima</em> Gmel.</span>
-                    </h3> */}
-  
+                    <hr className='mt-3 border-black'/>  
                   </div>
                     
 
@@ -1177,14 +1374,10 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
 
                     
                     <div className="summary-info bg-[#D4D4D4] flex-[0.6] p-[20px] rounded-[10px] h-full my-[13px]">
-                        {/* <div className="py-0">
-                            <h3 className="text-[24px] font-semibold">Details</h3>
-                        </div> */}
-    
         
                         <div className="info-section grid grid-cols-1 gap-2">
                             {
-                                fields[popupInfo.category || 'stopovers'].map((field,i) => {
+                                fields[category || 'stopovers'].map((field,i) => {
                                     return (
                                         (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
                                             <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{t(field.toLocaleLowerCase()) || field}</h4>
@@ -1255,7 +1448,8 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
   
                   </div>
                 </div>
-            </div>              
+            </div>    } */}
+
         </div>
       </div>
     )
@@ -1272,6 +1466,7 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageCl
         {stopovers.map((stopover,i) => {
           let [latitude, longitude] = stopover['COORDINATES'];
         //   console.log(latitude, longitude, stopover['STOPOVER']);
+            let bgColor = voyageColorCards[stopover['VOYAGE VARIANTS']];
 
           return <Marker 
             key={`${stopover['MAIN PLACE']}-${i}`} 
@@ -1281,7 +1476,8 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageCl
             <div 
                 onMouseLeave={() => setActiveEntry(null) }
                 onMouseOver={() => setActiveEntry(stopover)}
-                className="rounded-full bg-red-500 flex shadow-round p-[1px] align-center justify-center stopver-marker z-10"
+                style={{ background: (bgColor || "")}}
+                className={`rounded-full ${ bgColor ? `` : 'bg-red-500'} flex shadow-round p-[1px] align-center justify-center stopver-marker z-10 border-[1px] border-[#555]`}
             >
               <CircleDot size={10} className='bg-red-500/0 'opacity={0}/>
             </div>
@@ -1308,24 +1504,27 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageCl
                 </div>
   
                 <div className='mr-2'>
-                  <div className="fontsemibold">
+                    <div className="fontsemibold">
                         {language == "it" ?
                             `${activeEntry['ITA_MAIN PLACE']} (${activeEntry['ITA_STOPOVER']})` :
                             `${activeEntry['MAIN PLACE']} (${activeEntry['STOPOVER']})`
                         }
                         
                     </div>
-                  <div className="text-gray-400 flex">
-                    {t('date')}: {activeEntry['DEPARTURE DAY']} - {activeEntry['ARRIVAL DAY']}
-                  </div>
 
-                  <div className="px-0">
-                    {t('duration')}: {activeEntry['DURATION (days)']}
-                  </div>
+                    <div className="icon-box shadow-md p-2 rounded-md my-2" style={{ backgroundColor:(VoyageColors[activeEntry['VOYAGE VARIANTS']] || "gray")}}>
+                        <p className='span-1'>{activeEntry['VOYAGE VARIANTS']}</p>
+                    </div>
 
-                  <div className="icon-box shadow-md p-2 rounded-md my-2" style={{ backgroundColor:(VoyageColors[activeEntry['VOYAGE VARIANTS']] || "gray")}}>
-                    <p className='span-1'>{activeEntry['VOYAGE VARIANTS']}</p>
-                  </div>
+                    <div className="text-gray-400 flex">
+                        {t('date')}: {activeEntry['DEPARTURE DAY']} - {activeEntry['ARRIVAL DAY']}
+                    </div>
+
+                    <div className="px-0">
+                        {t('duration')}: {activeEntry['DURATION (days)']}
+                    </div>
+
+                  
                 </div>
               </div>
             </div>
@@ -1352,7 +1551,7 @@ const getMarkerIcon = (category) => {
 }
 
 
-const Markers = ({ items, setActiveItem, handleImageClick, hoverItem}) => {
+const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem }) => {
     const [popupInfo, setPopupInfo] = useState(null);
 
     const updateItem = (entry) => {
@@ -1394,7 +1593,7 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem}) => {
     let colors = {
         "stopovers":"red",
         "persons":"orange",
-        "documents":"cyan",
+        "documents":"#5F9EA0",
         "institutions":"grey",
         "scientific_specimen":"green"
     }
@@ -1403,7 +1602,6 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem}) => {
     
     const t = useTranslation();
     
-    // console.log(popupInfo);
     return(
         <>
             {(popupInfo && popupInfo.length) ? (
@@ -1478,7 +1676,10 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem}) => {
                     key={`${document['TITLE / NAME']}-${i}`} 
                     latitude={latitude} longitude={longitude} 
                     className="cursor-pointer"
-                    style={{zIndex: hoverItem && hoverItem.id == document.id ? 100 : "" }}
+                    style={{
+                        zIndex: hoverItem && hoverItem.id == document.id ? 40 : (activeItem && activeItem.info && activeItem.info.id == document.id) ? 40 : "", 
+                        
+                    }}
                     onClick={(e) => {
                     e.originalEvent.stopPropagation();
                         updateItem(document)
@@ -1486,7 +1687,9 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem}) => {
                 >
                 <div 
                     className={` ${ hoverItem && hoverItem.id == document.id ? `border-2 border-black bg-white` : bgColor} rounded-full flex shadow-md p-2 align-center justify-center`} 
-                    style={{ backgroundColor: hoverItem && hoverItem.id == document.id ? 'white' : bgColor}}
+                    style={{ 
+                        backgroundColor: hoverItem && hoverItem.id == document.id ? 'white' : (activeItem && activeItem.info && activeItem.info.id == document.id) ? "white" : bgColor
+                    }}
                 >
                     {getMarkerIcon(document.category)}
                 </div>

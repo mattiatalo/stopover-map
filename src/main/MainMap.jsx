@@ -19,7 +19,7 @@ export default forwardRef(function MainMap(props, ref) {
 
         latitude:31.2,
         longitude:17.13,
-        zoom: 2.4
+        zoom: 1.8
       }}
       ref={ref}
       onLoad={onLoad}
