@@ -2,9 +2,9 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import MainLayout from './MainLayout';
 import MainMap from './MainMap';
-import { getData } from '../services/data';
+import { getData, loadPageIntroSections } from '../services/data';
 import CollapsibleTab from '../components/CollapsibleTab';
-import { Bird, ChevronDown, ChevronRight, ChevronsRight, ChevronUp, CircleDot, File, Files, Layers, LucideGitGraph, MapPin, School, Users, X } from 'lucide-react';
+import { Bird, ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp, CircleDot, File, Files, Layers, LucideGitGraph, MapPin, School, Users, X } from 'lucide-react';
 
 // import { Novara } from "./data";
 import {Route  as Novara} from "./route";
@@ -29,6 +29,8 @@ import ImageViewer from '../components/ImageViewer';
 import { RiArrowDownLine, RiArrowDownSLine, RiArrowLeftSLine, RiArrowRightSLine, RiEarthFill, RiGlobalLine } from '@remixicon/react';
 import Charts from './charts';
 import { DocumentsDiv, InstitutionDiv, PersonsDiv, StopOverDiv } from '../components/InfoDivs';
+import { Parser } from 'html-to-react';
+
 
 dayjs.extend(customParseFormat);
 
@@ -58,6 +60,8 @@ const voyageColorCards = {
     "Hochstetter's return journey (2/10/1859-9/01/1860)" : "#F8F6F0",
     "Scherzer's return journey (16/05-1/08/1859)":"#F8F8FF"
 };
+
+const htmlToReactParser = new Parser();
 
 export default function MainPage() {
     const [isLoaded, setIsLoadied] = useState(false)
@@ -100,7 +104,8 @@ export default function MainPage() {
       selleny_works:[],
       activeVoyage:"",
       query:"",
-      allData:[]
+      allData:[],
+      pageIntroInfo:""
     });
 
     const [value] = useDebounce(state.query, 1000);
@@ -134,6 +139,9 @@ export default function MainPage() {
     const loadData = useCallback(async () => {
         setIsDataLoading(true);
         let data = await getData(updateDownloadProgress);
+        let pageIntroInfo = await loadPageIntroSections();
+
+        console.log(pageIntroInfo);
         let resources = ["institutions", "persons", "scientific_specimen", "documents"];
         let allData = [];
 
@@ -146,7 +154,7 @@ export default function MainPage() {
 
         allData = allData.map((entry, i) => ({id:i, ...entry}));
 
-        setState((prevState) => ({...prevState, ...data, allData }));
+        setState((prevState) => ({...prevState, ...data, allData, pageIntroInfo }));
         
         setIsDataLoading(false);
         setIsLoadied(true);
@@ -477,6 +485,16 @@ export default function MainPage() {
                                 </Popup> : ""} */}
                     </MainMap>
                 </div>
+
+                <CollapsibleTab
+                    position="top-right"
+                    collapseIcon={<ChevronsLeft className="text-gray-100"/>}
+                    collapseClass="about-tab overflow-hidden absolute z-20 right-6 top-16 bg-white w-[240px] min-h-[400px] rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]"
+                >
+                    <div className="about-section bg-white text-black p-[20px] h-full overflow-y-auto">
+                        {state.pageIntroInfo ? htmlToReactParser.parse(state.pageIntroInfo[language]) : ""}                        
+                    </div>
+                </CollapsibleTab>
                 
                 <CollapsibleTab
                     collapseIcon={<MapPin className="text-gray-100 "/>}
@@ -1024,9 +1042,10 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 
                 <div className="flex items-center w-full justify-between top-0 mb-4">
                     <div className="shadow-md rounded-full border-[2px] border-[#191919] p-1 w-fit w-20 px-3 border-black text-md text-center uppercase">
-                        <span className="font-semibold">{language == "it" ? popupInfo["ITA_SUBJECT"] : popupInfo['SUBJECT']}</span>
+                        <span className="font-semibold">{t('specimen')}</span>
                     </div> 
-                    
+
+                   
                     <div className='w-full text-center font-semibold'>
                         <span>{paginationText}</span>
                     </div>
@@ -1043,6 +1062,13 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 
   
                 <div className="content h-full">
+
+                    <div className="mb-3 rounded-full border-[1px] border-[#191919] p-1 w-fit w-20 px-3 border-black text-md text-center uppercase">
+                        <span className="font-semibold">{language == "it" ? popupInfo["ITA_SUBJECT"] : popupInfo['SUBJECT']}</span>
+                    </div> 
+
+
+               
                   <div className="header-section flex flex-col">
                     <h2 className="text-[#363636] mb-[20px] relative">
                         <strong className='font-bold  text-[1.4em]'>{language == "it" ? popupInfo["ITA_NAME"] : popupInfo['NAME']}</strong>
@@ -1069,12 +1095,20 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
                     </div>
 
                     <div className="font-semibold">
-                        <h5 className="text-title text-[1.2em] text-[#ad9a6d]">
+                        <h5 className="text-title text-[1.2em] text-[#ad9a6d] mt-3">
                             {/* Nomenclature adopted by the Novara scientists */}
                             {t('nomenclature_text')}
                         </h5>
 
-                        <h5 className='text-title text-[#363636] text-[1.2em]'>
+                        {/* <div className="">
+                            {t('Class')}
+
+                            <div className="">
+                                <span>{popupInfo[ language == 'it' ? 'ITA_CLASS' : 'CLASS']}</span>
+                            </div>
+                        </div> */}
+
+                        <h5 className='text-title text-[#363636] text-[1.2em] mt-3'>
                             <em className="">{popupInfo['SCIENTIFIC NAME']}</em>
                         </h5>
                     </div>
@@ -1089,12 +1123,6 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
                   </div>
   
                   <div className="body-section">
-                    <div className="description my-[25px] text-[14px] text-gray-700">
-                      <div>
-                        {(language == "it" ? popupInfo['ITA_FROM THE SCIENTIFIC VOLUMES'] || "" : popupInfo['FROM THE SCIENTIFIC VOLUMES'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
-                      </div>
-                    </div>
-
                     
                     <div className="summary-info bg-[#D4D4D4] flex-[0.6] p-[20px] rounded-[10px] h-full my-[16px]">
                         {/* <div className="py-0">
@@ -1103,12 +1131,13 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
     
         
                         <div className="info-section grid grid-cols-2 gap-2">
+                        {/* 'IUCN INDEX' 'Owner', 'Dimension', 'Inventory Number', */}
                             {
-                            ['State of preservation', 'Collection date', 'Collection place',  'Inventory Number', 'Dimension', 'IUCN INDEX' ].map((field,i) => {
+                            ['Class', 'Collection place', 'Collection date',  'State of preservation',  'IUCN INDEX' ].map((field,i) => {
                                 let colName = language == "it" ? `ITA_${field.toLocaleUpperCase()}` : field.toLocaleUpperCase();
                                 return (
-                                <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-2 text-sm w-full">
-                                    <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t(field.toLocaleLowerCase().split(" ").join("_"))}</h4>
+                                <div key={`${field}-${i}`} className="flex flex-col justify-between text-lg border-b border-[#ad9a6d] gap-2 items-start pt-2 text-sm w-full">
+                                    <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t(field) || t(field.toLocaleLowerCase().split(" ").join("_"))}</h4>
                                     <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[colName] || popupInfo[field.toLocaleUpperCase()]}</h5>
                                 </div>
                                 )
@@ -1121,11 +1150,46 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
                             <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('owner')}</h4>
                             <h5 className="capitalize text-[1.1em]">{popupInfo["OWNER"]}</h5>
                         </div>
-                    </div>
+                    </div>                    
+
+
+
+                    {(popupInfo['CATALOGUE DESCRIPTION'] || "") ?
+                        <>
+                        <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('Description') || "Description"}</h3>
+                        <div className="mt-[2px] mb-[25px] text-[14px] text-gray-700">
+                            {(popupInfo[language == 'it' ? 'ITA_CATALOGUE DESCRIPTION' : 'CATALOGUE DESCRIPTION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">
+                                {ref}
+                            </p>))}
+                        </div>
+
+                        <hr className='my-3 border-black'/> </>
+                        : ""}
+
+                        { popupInfo['ITA_FROM THE SCIENTIFIC VOLUMES'] && <div className="description my-[25px] text-[14px] text-gray-700">
+                            <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">
+                                { language !== "it" ? "From the scientific volumes" : "Dai volumi scientifici"}
+                            </h3>
+                            <div>
+                                {(language == "it" ? popupInfo['ITA_FROM THE SCIENTIFIC VOLUMES'] || "" : popupInfo['FROM THE SCIENTIFIC VOLUMES'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
+                            </div>
+                        </div> }
+
+                    { 
+                        popupInfo['QUOTATION']  ? <div className="description my-[25px] text-[14px] text-gray-700">
+                            <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('quotation')}</h3>
+                        <div>
+                            {( language == "it" ? popupInfo['ITA_QUOTATION'] : popupInfo['QUOTATION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
+                        </div>
+
+                        <hr className='my-3 border-black'/>
+                        </div> : "" 
+                    }
+
   
                     {(popupInfo['REFERENCES LINKS'] || "") ?
                         <>
-                        <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('references')}</h3>
+                        <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">{t('resources')}</h3>
                         <div className="mt-[2px] mb-[25px] text-[14px] text-gray-700">
                             {(popupInfo['REFERENCES LINKS'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">
                                 <a className="my-3 underline" href={ref} key={`${ref}-${i}`} onClick={onLinkClick}> {popupInfo['REFERENCES']}</a>
@@ -1134,7 +1198,8 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 
                         <hr className='my-3 border-black'/> </>
                         : ""}
-
+                    
+                   
   
                     <h3 className="text-title text-[18px] text-[#ad9a6d] font-semibold capitalize">{t('links')}</h3>
                     <div className="pb-5 text-[14px] text-gray-700">
@@ -1168,7 +1233,6 @@ const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, 
     const nextIndex = () => {
         if(currentIndex < items.length - 1) {
             setCurrentIndex(currentIndex + 1);
-            console.log(currentIndex + 1, items);
             setActiveItem({ info:items[currentIndex + 1], table:activeItem.table })
         } else {
             setCurrentIndex(0);
@@ -1193,7 +1257,12 @@ const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, 
     }
 
     return (
-        <div className='absolute right-0 top-[130px] h-[calc(80vh-100px)] border-[2px] border-[#000000] z-50 right-5 rounded-xl overflow-hidden'>
+        <div 
+            style={{
+                boxShadow: '0 -1px 20px 0 #ad9a6d'
+            }}
+            className='absolute right-0 top-[130px] h-[calc(80vh-100px)] border-[2px] border-[#000000] z-50 right-5 rounded-xl overflow-hidden'
+        >
             {/* <Carousel items={items} currentIndex={currentIndex}> */}
 
                 <button onClick={() => nextIndex()} className="carousel border-[1px] border-[#AD9A6D] btn absolute z-10 top-[50%] right-[1px] bg-white text-black rounded-full p-0">

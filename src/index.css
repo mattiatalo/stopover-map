@@ -218,6 +218,12 @@ div.mapboxgl-popup {
   }
 }
 
+.collapse-tab.close {
+  box-shadow: none !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
 .collapse-tab {
   transition: 0.4s all;
 }

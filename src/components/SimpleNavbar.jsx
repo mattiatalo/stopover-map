@@ -13,11 +13,13 @@ export function SimpleNavbar() {
     <Navbar fluid className="p-3 shadow-md bg-[#191919] z-50 w-full">
       <div id="link-1880-19" className="ct-link flex items-center text-[#fff]" href="https://globalsearoutes.net/">
 
-        <img 
-          id="image-1886-385" alt="" 
-          src="/logo-no-testo.png" 
-          className="ct-image w-10"
-        />
+        <a href="https://globalsearoutes.net/" target="_blank">
+          <img 
+            id="image-1886-385" alt="" 
+            src="/logo-no-testo.png" 
+            className="ct-image w-10"
+          />
+        </a>
 
         {/* <img 
           id="image-1886-385" alt="" 

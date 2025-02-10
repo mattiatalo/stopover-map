@@ -29,20 +29,26 @@
     "nomenclature_text":"Nomenclature adopted by the Novara scientists",
     "globe":"Globe",
     "type":"Type",
+    "Class":"Class",
+    "Description":"Description",
 
     "name":"Name",
     "gender":"Gender",
     "occupation":"Occupation",
 
     "place":"Place",
-    "foundation_date":"Foundation Date",
-    "director":"Director",
+    "foundation_date":"Foundation date",
+    "foundation date":"Foundation year",
+    "director":"Current head",
     "common_name":"Common Name",
     "title":"Title",
     "year/date":"Year/Date",
     "nature":"nature",
     "date":"Date",
     "duration":"Duration of stay (days)",
+    "arrival day":"Arrival date",
+    "departure day": "Departure date",
+    "Voyage stage":"Voyage stage",
 
 
 
@@ -76,14 +82,14 @@
     "collection":"collection",
 
     
-    "life dates":"life dates",
-    "country of birth":"country of birth",
-    "occupation typology":"occupation typology",
-    "institution typology":"institution typology",
-    "institution name":"institution name",
-    "main encounter place":"main encounter place",
-    "secondary encounter place":"secondary encounter place",
-    "encounter date":"encounter date",
+    "life dates":"Life dates",
+    "country of birth":"Country of birth",
+    "occupation typology":"Occupation typology",
+    "institution typology":"Institution typology",
+    "institution name":"Name of the institution",
+    "main encounter place":"Encounter place",
+    "secondary encounter place":"Secondary encounter place",
+    "encounter date":"Encounter date",
 
     "life data": "life data",
     "date encounter": "date encounter",

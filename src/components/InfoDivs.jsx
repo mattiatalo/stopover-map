@@ -12,7 +12,7 @@ let colors = {
 };
 
 let fields = {
-    stopovers:['ARRIVAL DAY', 'DEPARTURE DAY',  'DURATION (days)'],
+    stopovers:['DURATION (days)'],
     institutions:["Foundation date", 'Director',  "Typology"  ],
     documents:[
         "YEAR  / DATE","PUBLISHER / PRINTER","MAIN COLLECTION PLACE",  "COLLECTING MODE", "CURRENT OWNER",
@@ -23,7 +23,8 @@ let fields = {
         // "PERIOD", "MAIN LOCAL INSTITUTION INVOLVED", "MAIN LOCAL PERSON INVOLVED",  "COLLECTION"
     ],
     persons:["LIFE DATES", "COUNTRY OF BIRTH",  "TITLE", "OCCUPATION",  "INSTITUTION NAME", 
-        "MAIN ENCOUNTER PLACE",  "ENCOUNTER DATE", "GENDER"
+        "MAIN ENCOUNTER PLACE",  "ENCOUNTER DATE"
+        // , "GENDER"
     ]
 };
 
@@ -37,8 +38,8 @@ export const StopOverDiv = ({ popupInfo, setActiveItem, setActiveLink, category,
             className={`detail-modal bg-[#f1f0ee] `}
         >
             <div className={`flex w-full px-[2%] py-5 max-h-full text-[#54595f] overflow-y-auto overflow-x-hidden`}>
-                <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
-                    {popupInfo['MAIN PLACE'] && <div className="border-b border-gray-300 w-full text-left text-xl mb-3">
+                <div className="general-info flex-1 h-full w-full max-w-full text-[#363636] ">
+                    {popupInfo['MAIN PLACE'] && <div className="border-b border-gray-300 font-bold w-full text-left text-xl mb-3">
                         { popupInfo['MAIN PLACE']} ({popupInfo['STOPOVER']})
                     </div> } 
                     
@@ -55,8 +56,31 @@ export const StopOverDiv = ({ popupInfo, setActiveItem, setActiveLink, category,
 
                     <div className="body-section">
                         <div className="summary-info bg-[#D4D4D4] flex-[0.6] p-[20px] rounded-[10px] h-full my-[13px]">
+
+                            <div className="flex ">
+                                <div className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
+                                    <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t("ARRIVAL DAY".toLocaleLowerCase()) || "ARRIVAL DAY"}</h4>
+                                    <h5 className="capitalize text-[1.1em] mb-3">
+                                        {language == "it" ? (popupInfo[`ITA_ARRIVAL DAY`] || popupInfo["ARRIVAL DAY"]) : popupInfo['ARRIVAL DAY'] || "N.A"}
+                                        {/* {language == "it" ? (popupInfo[`ITA_DEPARTURE DAY`] || popupInfo['DEPARTURE DAY']) : popupInfo['DEPARTURE DAY'] || "N.A"} */}
+                                    </h5>
+                                </div>
+
+                                <div className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full ">
+                                    <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t("DEPARTURE DAY".toLocaleLowerCase()) || "DEPARTURE DAY"}</h4>
+                                    <h5 className="capitalize text-[1.1em] mb-3">{language == "it" ? (popupInfo[`ITA_DEPARTURE DAY`] || popupInfo['DEPARTURE DAY']) : popupInfo['DEPARTURE DAY'] || "N.A"}</h5>
+                                </div>
+                            </div>
+
+
+                            <div className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full mt-3">
+                                <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t("duration") || "DEPARTURE DAY"}</h4>
+                                <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[`DURATION (days)`]}</h5>
+                            </div>
+
+
                             <div className="info-section grid grid-cols-1 gap-2">
-                                {
+                                {/* {
                                     fields[category || 'stopovers'].map((field,i) => {
                                         return (
                                             (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
@@ -66,14 +90,14 @@ export const StopOverDiv = ({ popupInfo, setActiveItem, setActiveLink, category,
                                         )
                                 })
 
-                                }   
+                                }    */}
                             </div>
                         </div>
 
-                        
-                            <div  style={{ backgroundColor:(VoyageColors[popupInfo['VOYAGE VARIANTS']] || "gray")}} className='p-2 rounded-md my-2 text-title'>
-                                {language == "it" ? popupInfo['ITA_VOYAGE VARIANTS'] : popupInfo['VOYAGE VARIANTS']}
-                            </div> 
+                        <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t("Voyage stage")}</h4>
+                        <div  style={{ backgroundColor:(VoyageColors[popupInfo['VOYAGE VARIANTS']] || "gray")}} className='p-2 rounded-md my-2 text-title'>
+                            {language == "it" ? popupInfo['ITA_VOYAGE VARIANTS'] : popupInfo['VOYAGE VARIANTS']}
+                        </div> 
                         
 
                         { (popupInfo['QUOTATION'] && popupInfo['QUOTATION'] !== "N. A.") ? <div className="description my-[25px] text-[14px] text-gray-700">
@@ -129,7 +153,7 @@ export const PersonsDiv = ({ popupInfo, setActiveItem, setActiveLink, category, 
 
     let personsName = "";
     personsName += popupInfo['LAST NAME'] == "N. A." ? "" : popupInfo['LAST NAME'];
-    personsName += popupInfo['FIRST NAME'] == "N. A." ? "" : " " + popupInfo['FIRST NAME'];
+    personsName += popupInfo['FIRST NAME'] == "N. A." ? "" : ", " + popupInfo['FIRST NAME'];
 
     return (
         <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
@@ -163,7 +187,7 @@ export const PersonsDiv = ({ popupInfo, setActiveItem, setActiveLink, category, 
                                 fields[category || 'stopovers'].map((field,i) => {
                                     return (
                                         (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
-                                            <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{t(field.toLocaleLowerCase()) || field}</h4>
+                                            <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t(field.toLocaleLowerCase()) || field}</h4>
                                             <h5 className="capitalize text-[1.1em] mb-3">{language == "it" ? (popupInfo[`ITA_${field}`] || popupInfo[field]) : popupInfo[field] || "N.A"}</h5>
                                         </div> : ""
                                     )
@@ -341,6 +365,10 @@ export const InstitutionDiv = ({ popupInfo, setActiveItem, setActiveLink, catego
         </div> }                */}
 
         <div className="content h-full">
+            <div className="px-0 h-auto w-full">
+                {popupInfo['Image'] && <ImageViewer imageUrl={popupInfo['Image']} alt="" className='h-auto' showImage={true} onClose={console.log}/>}
+            </div>
+            
           <div className="header-section flex flex-col">
             <h2 className="text-[#363636] text-[1.5em]">
                 <strong>{popupInfo['INSTITUTION NAME']}</strong>                       
@@ -380,12 +408,13 @@ export const InstitutionDiv = ({ popupInfo, setActiveItem, setActiveLink, catego
               <hr className='my-3 border-black'/>
             </div> : "" }
 
+
             {(popupInfo['References'] || "") ?
             <>
-            <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('references')}</h3>
+            <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('links')}</h3>
             <div className="mt-[2px] mb-[25px] text-[14px] text-gray-700">
-                {(popupInfo['References'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">
-                    <a className="my-3" href={ref} key={`${ref}-${i}`} onClick={onLinkClick}> {ref}</a>
+                {(popupInfo['References'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2 break-words">
+                    <a className="my-3 underline" href={ref} key={`${ref}-${i}`} onClick={onLinkClick}> {ref}</a>
                 </p>))}
             </div>
 
