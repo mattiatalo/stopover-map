@@ -13,7 +13,7 @@ let colors = {
 
 let fields = {
     stopovers:['ARRIVAL DAY', 'DEPARTURE DAY',  'DURATION (days)'],
-    institutions:["Foundation date", 'Director',  "Nature"  ],
+    institutions:["Foundation date", 'Director',  "Typology"  ],
     documents:[
         "YEAR  / DATE","PUBLISHER / PRINTER","MAIN COLLECTION PLACE",  "COLLECTING MODE", "CURRENT OWNER",
         "COLLECTION",  
@@ -61,7 +61,7 @@ export const StopOverDiv = ({ popupInfo, setActiveItem, setActiveLink, category,
                                         return (
                                             (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
                                                 <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{t(field.toLocaleLowerCase()) || field}</h4>
-                                                <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[field] || "N.A"}</h5>
+                                                <h5 className="capitalize text-[1.1em] mb-3">{language == "it" ? (popupInfo[`ITA_${field}`] || popupInfo[field]) : popupInfo[field] || "N.A"}</h5>
                                             </div> : ""
                                         )
                                 })
@@ -248,7 +248,7 @@ export const DocumentsDiv = ({ popupInfo, setActiveItem, setActiveLink, category
                                     return (
                                         (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
                                             <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{t(field.toLocaleLowerCase()) || field}</h4>
-                                            <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[field] || "N.A"}</h5>
+                                            <h5 className="capitalize text-[1.1em] mb-3">{language == "it" ? (popupInfo[`ITA_${field}`] || popupInfo[field]) : popupInfo[field] || "N.A"}</h5>
                                         </div> : ""
                                     )
                             })
@@ -362,7 +362,7 @@ export const InstitutionDiv = ({ popupInfo, setActiveItem, setActiveLink, catego
                             return (
                                 (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
                                     <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{t(field.toLocaleLowerCase()) || field}</h4>
-                                    <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[field] || "N.A"}</h5>
+                                    <h5 className="capitalize text-[1.1em] mb-3">{language == "it" ? (popupInfo[`ITA_${field}`] || popupInfo[field]) : popupInfo[field] || "N.A"}</h5>
                                 </div> : ""
                             )
                     })

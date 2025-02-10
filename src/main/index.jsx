@@ -4,7 +4,7 @@ import MainLayout from './MainLayout';
 import MainMap from './MainMap';
 import { getData } from '../services/data';
 import CollapsibleTab from '../components/CollapsibleTab';
-import { Bird, ChevronDown, ChevronRight, ChevronsRight, ChevronUp, CircleDot, File, Files, Layers, LucideGitGraph, School, Users, X } from 'lucide-react';
+import { Bird, ChevronDown, ChevronRight, ChevronsRight, ChevronUp, CircleDot, File, Files, Layers, LucideGitGraph, MapPin, School, Users, X } from 'lucide-react';
 
 // import { Novara } from "./data";
 import {Route  as Novara} from "./route";
@@ -82,6 +82,7 @@ export default function MainPage() {
     const t = useTranslation();
 
     const [activeStopoverTab, setActiveStopoverTab] = useState("list");
+    const [hoverStopover, setHoverStopover] = useState("");
 
     const [dateFilter, setDateFilter] = useState({
         minDate:new Date("1857"),
@@ -420,7 +421,7 @@ export default function MainPage() {
 
                 <div className="w-full">
                     <MainMap projection={"globe"} basemap={"daks"} ref={mapRef}>
-                        {state.stopovers.length && <StopOVerMarkers stopovers={state.stopovers} handleImageClick={setActiveImage} handelClick={handleStopoverClick} activeStopOver={activeStopOver}/>}
+                        {state.stopovers.length && <StopOVerMarkers hoverItem={hoverStopover} stopovers={state.stopovers} handleImageClick={setActiveImage} handelClick={handleStopoverClick} activeStopOver={activeStopOver}/>}
                         <Source type="geojson" data={Novara}>
                             { <Layer {...dataLayer} /> }
                         </Source>
@@ -478,7 +479,7 @@ export default function MainPage() {
                 </div>
                 
                 <CollapsibleTab
-                    collapseIcon={<ChevronsRight className="text-gray-500"/>}
+                    collapseIcon={<MapPin className="text-gray-100 "/>}
                     collapseClass="absolute w-96 bg-white left-6 top-16 z-20 rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]"
                 >
                     <div className='w-full bg-white left-6 top-16 overflow-hidden rounded-[10px]'>
@@ -600,6 +601,7 @@ export default function MainPage() {
                                                                 stopOver={stopOver} 
                                                                 onClick={() => handleStopoverClick(stopOver)} 
                                                                 activeStopOver={activeStopOver} 
+                                                                setHoverStopover={setHoverStopover}
                                                             />
                                                         )
                                                         
@@ -616,6 +618,7 @@ export default function MainPage() {
                                                     stopOver={stopOver} 
                                                     onClick={() => handleStopoverClick(stopOver)} 
                                                     activeStopOver={activeStopOver} 
+                                                    setHoverStopover={setHoverStopover}
                                                 />
                                             )
                                         })
@@ -720,7 +723,7 @@ export default function MainPage() {
                     collapseIcon={<ChevronsRight className="text-gray-500"/>}
                     collapseClass="summary-cards absolute z-20 left-6 bottom-4  min-w-[40px] min-h-[40px]"
                 >
-                    <div className="space-x-0 py-2 flex px-3 bg-white rounded-[25px] shadow-round">
+                    <div className="space-x-0 py-2 flex px-3 bg-white rounded-[25px] shadow-round pl-[20px]">
                     <div className="tab flex items-center px-1 cursor-pointer" onClick={() => {setIsSummaryClick(true); setActiveTable('scientific_specimen');}}>
                         <div className="icon mx-1">
                             <Bird size={20} color="#4AB46C"/>
@@ -828,8 +831,8 @@ const Accordion = ({title, children}) => {
     
 
     return(
-        <div className='accordion'>
-            <button className='w-full flex justify-between bg-gray-0 p-2 rounded-md px-4 relative ml-6 w-[89%]' onClick={() => setIsOpen(!isOpen)}>
+        <div className='accordion w-full'>
+            <button className='w-full flex justify-between bg-gray-0 p-2 rounded-md  relative ml-6 w-[calc(100%-1.5rem)]' onClick={() => setIsOpen(!isOpen)}>
                 {title}
                 { isOpen ? <ChevronDown /> : <ChevronUp /> }
 
@@ -844,7 +847,7 @@ const Accordion = ({title, children}) => {
     )
 }
 
-const StopOverCard = ({stopOver, onClick, activeStopOver}) => {
+const StopOverCard = ({stopOver, onClick, activeStopOver, setHoverStopover}) => {
     const t = useTranslation();
     const { language } = useLocalization();
 
@@ -853,8 +856,10 @@ const StopOverCard = ({stopOver, onClick, activeStopOver}) => {
             style={{
                 background:(voyageColorCards[stopOver['VOYAGE VARIANTS']] || "#fff")
             }}
-            className="w-full flex px-4 text-xs rounded-t-lg items-center cursor-pointer hover:bg-gray-200"
+            className="w-full flex px-4 text-xs rounded-t-lg items-center cursor-pointer !hover:bg-gray-500"
             onClick={onClick}
+            onMouseOver={() => setHoverStopover(stopOver)}
+            onMouseLeave={() => setHoverStopover("")}
         >
             <div className="flex items-center flex-col relative h-full py-3">
                 <div 
@@ -1050,13 +1055,13 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 
                     </h2>
 
-                    <div className="px-0 h-auto w-full relative">
+                    <div className="px-0 h-auto w-full relative image-div">
                         {/* <img src={popupInfo['FEATURED IMAGE']} className="w-full"/> */}
                         <ImageViewer imageUrl={popupInfo['FEATURED IMAGE']} className="w-full" showImage={true} onClose={console.log} cnName="w-full" />
 
                         { 
                             popupInfo['SPLINE-CODE']  && 
-                            <button className="absolute right-4 bottom-4 bg-[#fff] rounded-md capitalize rounded-md p-0 w-16 h-16" onClick={() => setShowSpline(true)}>
+                            <button className="absolute right-4 bottom-4 bg-[#fff] rounded-md capitalize rounded-md p-0 w-16 h-16 z-12" onClick={() => setShowSpline(true)}>
                                 <img src="/3d_image.jpg" alt="" className='h-10 w-auto rounded-md' />
                             </button>
                         }
@@ -1110,8 +1115,6 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
                             })
         
                             }   
-
-                            {/* 'Owner',  */}
                         </div>
 
                         <div className="flex flex-col text-lg gap-2 items-start py-2 text-sm w-full">
@@ -1120,12 +1123,18 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
                         </div>
                     </div>
   
-                    <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('references')}</h3>
-                    <div className="mt-[2px] mb-[25px] text-[14px] text-gray-700">
-                        {popupInfo['REFERENCES'].split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
-                    </div>
+                    {(popupInfo['REFERENCES LINKS'] || "") ?
+                        <>
+                        <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('references')}</h3>
+                        <div className="mt-[2px] mb-[25px] text-[14px] text-gray-700">
+                            {(popupInfo['REFERENCES LINKS'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">
+                                <a className="my-3 underline" href={ref} key={`${ref}-${i}`} onClick={onLinkClick}> {popupInfo['REFERENCES']}</a>
+                            </p>))}
+                        </div>
 
-                    <hr className='my-3 border-black mb-6'/>
+                        <hr className='my-3 border-black'/> </>
+                        : ""}
+
   
                     <h3 className="text-title text-[18px] text-[#ad9a6d] font-semibold capitalize">{t('links')}</h3>
                     <div className="pb-5 text-[14px] text-gray-700">
@@ -1184,7 +1193,7 @@ const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, 
     }
 
     return (
-        <div className='absolute right-0 top-[130px] h-[calc(80vh-55px)] border-[2px] border-[#000000] z-50 right-5 rounded-xl overflow-hidden'>
+        <div className='absolute right-0 top-[130px] h-[calc(80vh-100px)] border-[2px] border-[#000000] z-50 right-5 rounded-xl overflow-hidden'>
             {/* <Carousel items={items} currentIndex={currentIndex}> */}
 
                 <button onClick={() => nextIndex()} className="carousel border-[1px] border-[#AD9A6D] btn absolute z-10 top-[50%] right-[1px] bg-white text-black rounded-full p-0">
@@ -1233,7 +1242,7 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
 
     let fields = {
         stopovers:['DEPARTURE DAY', 'ARRIVAL DAY', 'DURATION (days)', 'VOYAGE VARIANTS', 'ANCHORAGE TYPOLOGY'],
-        institutions:["Foundation date", 'Director',  "Nature"  ],
+        institutions:["Foundation date", 'Director',  "Typology"  ],
         documents:["MAIN COLLECTION PLACE", "SECONDARY COLLECTION PLACE", "ALTERNATIVE TITLE / NAME", "ENGLISH TRANSLATION", "FIRST AUTHOR", "SECOND AUTHOR",
             "TRANSLATED BY", "EDITED BY", "KIND OF SOURCE", "MEDIUM", "MEASURES / QUANTITY / FORMAT", "LANGUAGE", "YEAR  / DATE", "PUBLISHER / PRINTER", 
             "PERIOD", "MAIN LOCAL INSTITUTION INVOLVED", "MAIN LOCAL PERSON INVOLVED", "COLLECTING MODE", "CURRENT OWNER", "COLLECTION"
@@ -1462,7 +1471,7 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
 }
 
 
-const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageClick }) => {
+const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageClick, hoverItem }) => {
     const t = useTranslation();
     const { language } = useLocalization();
     const [activeEntry, setActiveEntry] = useState(null);
@@ -1482,7 +1491,10 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageCl
             <div 
                 onMouseLeave={() => setActiveEntry(null) }
                 onMouseOver={() => setActiveEntry(stopover)}
-                style={{ background: (bgColor || "")}}
+                style={{ 
+                    background: (bgColor || ""),
+                    zIndex: hoverItem && hoverItem.id == stopover.id ? 40  : 0
+                }}
                 className={`rounded-full ${ bgColor ? `` : 'bg-red-500'} flex shadow-round p-[1px] align-center justify-center stopver-marker z-10 border-[1px] border-[#555]`}
             >
               <CircleDot size={10} className='bg-red-500/0 'opacity={0}/>
@@ -1684,10 +1696,9 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem
                     className="cursor-pointer"
                     style={{
                         zIndex: hoverItem && hoverItem.id == document.id ? 40 : (activeItem && activeItem.info && activeItem.info.id == document.id) ? 40 : "", 
-                        
                     }}
                     onClick={(e) => {
-                    e.originalEvent.stopPropagation();
+                        e.originalEvent.stopPropagation();
                         updateItem(document)
                     }}
                 >

@@ -13,6 +13,7 @@ export default function Table({ data, columnNames, columnMapping, setActiveItem,
         // console.log("Mouse Leave");
         setHoverItem("");
     }
+
     return (
         <div className="relative overflow-x-auto">
             <table className="w-full text-sm text-left rtl:text-right text-gray-500 da:text-gray-400">
@@ -23,7 +24,7 @@ export default function Table({ data, columnNames, columnMapping, setActiveItem,
                 </thead>
                 <tbody>
                     {
-                        data.map((entry,i) => {
+                        (tableName == "persons" ? data.sort((a,b) => (a['LAST NAME'] || "").localeCompare( b['LAST NAME'])) : data).map((entry,i) => {
                             return <tr key={i} 
                                 className="bg-white border-b da:bg-gray-800 da:border-gray-700 cursor-pointer hover:bg-gray-100" 
                                 onClick={() => setActiveItem({ table:tableName, info:entry})}
