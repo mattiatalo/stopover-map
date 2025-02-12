@@ -15,8 +15,8 @@ let fields = {
     stopovers:['DURATION (days)'],
     institutions:["Foundation date", 'Director',  "Typology"  ],
     documents:[
-        "YEAR  / DATE","PUBLISHER / PRINTER","MAIN COLLECTION PLACE",  "COLLECTING MODE", "CURRENT OWNER",
-        "COLLECTION",  
+        "YEAR  / DATE","PUBLISHER / PRINTER","MAIN COLLECTION PLACE", "COLLECTING MODE", "CURRENT OWNER",
+        "COLLECTION", 
 
         // "SECONDARY COLLECTION PLACE", "ALTERNATIVE TITLE / NAME", "ENGLISH TRANSLATION", "FIRST AUTHOR", "SECOND AUTHOR",
         // "TRANSLATED BY", "EDITED BY", "KIND OF SOURCE", "MEDIUM", "MEASURES / QUANTITY / FORMAT", "LANGUAGE",  
@@ -126,7 +126,7 @@ export const StopOverDiv = ({ popupInfo, setActiveItem, setActiveLink, category,
         
                             {
                                 (popupInfo['LINKS'] || popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "").split("\n").map((link,i) => (
-                                <a className="my-3" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
+                                <a className="my-3 mb-2 break-words" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
                                     <span className="underline pointer-events-none">{link}</span>
                                 </a>
                                 ))
@@ -200,7 +200,7 @@ export const PersonsDiv = ({ popupInfo, setActiveItem, setActiveLink, category, 
                     { (popupInfo['QUOTATION'] && popupInfo['QUOTATION'] !== "N. A.") ? <div className="description my-[25px] text-[14px] text-gray-700">
                         <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('quotation')}</h3>
                       <div>
-                        {( popupInfo[ language == "it" ? 'ITA_QUOTATION': 'QUOTATION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
+                        {( popupInfo[ language == "it" ? 'ITA_QUOTATION': 'QUOTATION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2 ">{ref}</p>))}
                       </div>
 
                       <hr className='my-3 border-black'/>
@@ -215,7 +215,7 @@ export const PersonsDiv = ({ popupInfo, setActiveItem, setActiveLink, category, 
   
                       {
                         (popupInfo['LINKS'] || popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "").split("\n").map((link,i) => (
-                          <a className="my-3" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
+                          <a className="my-3 break-words" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
                             <span className="underline pointer-events-none">{popupInfo['RESOURCES']}</span>
                           </a>
                         ))
@@ -268,10 +268,10 @@ export const DocumentsDiv = ({ popupInfo, setActiveItem, setActiveLink, category
         
                         <div className="info-section grid grid-cols-1 gap-2">
                             {
-                                fields[category || 'stopovers'].map((field,i) => {
+                                fields[category].map((field,i) => {
                                     return (
                                         (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
-                                            <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{t(field.toLocaleLowerCase()) || field}</h4>
+                                            <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t(field.toLocaleLowerCase().trim())}</h4>
                                             <h5 className="capitalize text-[1.1em] mb-3">{language == "it" ? (popupInfo[`ITA_${field}`] || popupInfo[field]) : popupInfo[field] || "N.A"}</h5>
                                         </div> : ""
                                     )
@@ -280,10 +280,10 @@ export const DocumentsDiv = ({ popupInfo, setActiveItem, setActiveLink, category
                             }   
 
                             {popupInfo['DIGITAL VERSION'] && <div className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
-                                <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{t('DIGITAL VERSION'.toLocaleLowerCase()) ||'DIGITAL VERSION'}</h4>
+                                <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t('Digital version') ||'Digital version'}</h4>
                                 <h5 className="capitalize text-[1.1em] mb-3">
                                     { popupInfo['DIGITAL VERSION'] !== "N.A" ? 
-                                        <a href={popupInfo['DIGITAL VERSION']} className='underline pointer-events-none' onClick={onLinkClick}>
+                                        <a href={popupInfo['DIGITAL VERSION']} className='underline pointer-events-none  break-words' onClick={onLinkClick}>
                                             Link 
                                         </a> : "N.A"}
                                     </h5>
@@ -309,7 +309,7 @@ export const DocumentsDiv = ({ popupInfo, setActiveItem, setActiveLink, category
   
                       {
                         (popupInfo['LINKS'] || popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "").split("\n").map((link,i) => (
-                          <a className="my-3" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
+                          <a className="my-3  break-words" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
                             <span className="underline pointer-events-none">{popupInfo['RESOURCES']}</span>
                           </a>
                         ))
@@ -336,7 +336,7 @@ export const DocumentsDiv = ({ popupInfo, setActiveItem, setActiveLink, category
   
                       {
                         (popupInfo['LINKS'] || popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "").split("\n").map((link,i) => (
-                          <a className="my-3" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
+                          <a className="my-3  break-words" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
                             <span className="underline pointer-events-none">{link}</span>
                           </a>
                         ))
@@ -367,8 +367,11 @@ export const InstitutionDiv = ({ popupInfo, setActiveItem, setActiveLink, catego
         <div className="content h-full">
             <div className="px-0 h-auto w-full">
                 {popupInfo['Image'] && <ImageViewer imageUrl={popupInfo['Image']} alt="" className='h-auto' showImage={true} onClose={console.log}/>}
+                <figcaption className='my-3 text-sm'>
+                    {language == "it" ? popupInfo['ITA_Caption'] : popupInfo['Caption']}
+                </figcaption>
             </div>
-            
+
           <div className="header-section flex flex-col">
             <h2 className="text-[#363636] text-[1.5em]">
                 <strong>{popupInfo['INSTITUTION NAME']}</strong>                       
@@ -389,7 +392,7 @@ export const InstitutionDiv = ({ popupInfo, setActiveItem, setActiveLink, catego
                         fields[category || 'stopovers'].map((field,i) => {
                             return (
                                 (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
-                                    <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{t(field.toLocaleLowerCase()) || field}</h4>
+                                    <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t(field.toLocaleLowerCase()) || field}</h4>
                                     <h5 className="capitalize text-[1.1em] mb-3">{language == "it" ? (popupInfo[`ITA_${field}`] || popupInfo[field]) : popupInfo[field] || "N.A"}</h5>
                                 </div> : ""
                             )
@@ -428,7 +431,7 @@ export const InstitutionDiv = ({ popupInfo, setActiveItem, setActiveLink, catego
 
               {
                 (popupInfo['LINKS'] || popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "").split("\n").map((link,i) => (
-                  <a className="my-3" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
+                  <a className="my-3  break-words" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
                     <span className="underline pointer-events-none">{link}</span>
                   </a>
                 ))

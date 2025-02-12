@@ -10,7 +10,7 @@ export function SimpleNavbar() {
   const { language } = useLocalization();
 
   return (
-    <Navbar fluid className="p-3 shadow-md bg-[#191919] z-50 w-full">
+    <Navbar fluid className="p-3 shadow-md bg-[#191919] z-[80] w-full">
       <div id="link-1880-19" className="ct-link flex items-center text-[#fff]" href="https://globalsearoutes.net/">
 
         <a href="https://globalsearoutes.net/" target="_blank">

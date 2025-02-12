@@ -54,11 +54,11 @@ const sliderValuesToDates = (values) => {
 }
 
 const voyageColorCards = {
-    "Commodore Wüllerstorf-Urbair and staff in Canton":'aliceblue',
-    "Novara naturalists in Macao":'#f5f5dc',
-    "Hochstetter's New Zealand mission (8/01-2/10/1859)":"#EAEEE9",
-    "Hochstetter's return journey (2/10/1859-9/01/1860)" : "#F8F6F0",
-    "Scherzer's return journey (16/05-1/08/1859)":"#F8F8FF"
+    "Commodore Wüllerstorf-Urbair and staff in Canton":'#95E2AA',
+    "Novara naturalists in Macao":'#E761D2',
+    "Hochstetter's New Zealand mission (8/01-2/10/1859)":"#548EB6",
+    "Hochstetter's return journey (2/10/1859-9/01/1860)" : "#7F3BC4",
+    "Scherzer's return journey (16/05-1/08/1859)":"#C49AC4"
 };
 
 const htmlToReactParser = new Parser();
@@ -264,6 +264,14 @@ export default function MainPage() {
     }
 
     useEffect(() => {
+        if(activeLink) {
+            window.open(activeLink, '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
+            setActiveLink("");
+        }
+
+    }, [activeLink]);
+
+    useEffect(() => {
         if(activeItem) {
             let [latitude, longitude] = activeItem.info['COORDINATES'];
 
@@ -328,7 +336,7 @@ export default function MainPage() {
     // close and open panels
     return (
         <MainLayout>
-            { isDataLoading && <div className='absolute z-[60] top-0 left-0 w-full bg-black/80 h-full flex items-center justify-center'>
+            { isDataLoading && <div className='absolute z-[100] top-0 left-0 w-full bg-black/80 h-full flex items-center justify-center'>
                 <div className=" bg-white/0 p-2 rounded-md flex flex flex-col items-center text-white">
 
                     {/* <div className="loading-bar-background">
@@ -347,17 +355,13 @@ export default function MainPage() {
             <div className="map-container relative flex w-full">
            
 
-             <nav className="flex w-full absolute top-0 left-0 z-10 bg-white items-center justify-center" aria-label="Breadcrumb">
+             <nav className="flex w-full absolute top-0 left-0 z-[60] bg-white items-center justify-center" aria-label="Breadcrumb">
                  <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse p-2">
                         <li className="inline-flex items-center">
-                            <div href="#" onClick={resetMap} className="inline-flex items-center text-sm font-medium text-gray-700">
-                                {/* <svg className="w-3 h-3 me-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z"/>
-                                </svg> */}
-
-
-                                <RiEarthFill />
-                                {/* {t('globe')} */}
+                            <div href="#" onClick={resetMap} className="bg-gray-100 py-1 px-4 rounded-3xl cursor-pointer inline-flex items-center text-sm font-medium text-gray-700">
+                                    <img src="/globe.png" alt="" className='h-[32px] mr-2'/>
+                               
+                                {t('globe')}
                             </div>
                         </li>
                         { activeStopOver ?
@@ -488,8 +492,8 @@ export default function MainPage() {
 
                 <CollapsibleTab
                     position="top-right"
-                    collapseIcon={<ChevronsLeft className="text-gray-100"/>}
-                    collapseClass="about-tab overflow-hidden absolute z-20 right-6 top-16 bg-white w-[240px] min-h-[400px] rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]"
+                    collapseIcon={<ChevronsLeft className="text-gray-100" />}
+                    collapseClass="about-tab overflow-hidden absolute z-20 right-6 top-16 bg-white w-[240px] h-[400px] rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]"
                 >
                     <div className="about-section bg-white text-black p-[20px] h-full overflow-y-auto">
                         {state.pageIntroInfo ? htmlToReactParser.parse(state.pageIntroInfo[language]) : ""}                        
@@ -554,7 +558,7 @@ export default function MainPage() {
 
                         { activeStopoverTab == "timeline" ? <div className="relative text-white timeline-section bg-[#2B222D] w-full h-full overflow-hidden">
                             <div className="timeline-header p-4">
-                                <div className="title font-semibold font-medium uppercase">
+                                <div className="title font-semibold font-medium uppercase hidden">
                                     {t('stopovers')}
 
                                     ({
@@ -619,6 +623,7 @@ export default function MainPage() {
                                                                 stopOver={stopOver} 
                                                                 onClick={() => handleStopoverClick(stopOver)} 
                                                                 activeStopOver={activeStopOver} 
+                                                                hoverStopover={hoverStopover}
                                                                 setHoverStopover={setHoverStopover}
                                                             />
                                                         )
@@ -637,6 +642,7 @@ export default function MainPage() {
                                                     onClick={() => handleStopoverClick(stopOver)} 
                                                     activeStopOver={activeStopOver} 
                                                     setHoverStopover={setHoverStopover}
+                                                    hoverStopover={hoverStopover}
                                                 />
                                             )
                                         })
@@ -742,7 +748,7 @@ export default function MainPage() {
                     collapseClass="summary-cards absolute z-20 left-6 bottom-4  min-w-[40px] min-h-[40px]"
                 >
                     <div className="space-x-0 py-2 flex px-3 bg-white rounded-[25px] shadow-round pl-[20px]">
-                    <div className="tab flex items-center px-1 cursor-pointer" onClick={() => {setIsSummaryClick(true); setActiveTable('scientific_specimen');}}>
+                    <div className="tab flex items-center px-1 cursor-pointer ml-8" onClick={() => {setIsSummaryClick(true); setActiveTable('scientific_specimen');}}>
                         <div className="icon mx-1">
                             <Bird size={20} color="#4AB46C"/>
                         </div>
@@ -837,9 +843,9 @@ export default function MainPage() {
                 { ( showSpline && activeItem && activeItem.table == "scientific_specimen")  ? <SpecimenSplineModal activeItem={activeItem} setShowSpline={setShowSpline} /> : "" }
             </div>
 
-            {activeLink ? <Modal activeTab={activeTab} isOpen={true} toggleActiveTable={setActiveLink}>
+            {/* {activeLink ? <Modal activeTab={activeTab} isOpen={true} toggleActiveTable={setActiveLink}>
                 <iframe src={encodeURI(activeLink)} width={"100%"} height={"100%"} target="_parent"></iframe>
-            </Modal> : ""}
+            </Modal> : ""} */}
         </MainLayout>
     )
 }
@@ -865,23 +871,25 @@ const Accordion = ({title, children}) => {
     )
 }
 
-const StopOverCard = ({stopOver, onClick, activeStopOver, setHoverStopover}) => {
+const StopOverCard = ({stopOver, onClick, activeStopOver, setHoverStopover, hoverStopover}) => {
     const t = useTranslation();
     const { language } = useLocalization();
 
+    let bgColor = voyageColorCards[stopOver['VOYAGE VARIANTS']] || "#dddddd";
     return (
         <li 
             style={{
-                background:(voyageColorCards[stopOver['VOYAGE VARIANTS']] || "#fff")
+                background:(hoverStopover && stopOver.id == hoverStopover.id) ? "#d3d3d380" : ("#fff")
             }}
-            className="w-full flex px-4 text-xs rounded-t-lg items-center cursor-pointer !hover:bg-gray-500"
+            className="w-full flex px-4 text-xs rounded-t-lg items-center cursor-pointer"
             onClick={onClick}
             onMouseOver={() => setHoverStopover(stopOver)}
             onMouseLeave={() => setHoverStopover("")}
         >
             <div className="flex items-center flex-col relative h-full py-3">
                 <div 
-                    className={`${activeStopOver && activeStopOver['STOPOVER'] == stopOver['STOPOVER'] ? 'bg-green-800/40': 'bg-gray-400/20' } flex items-center justify-center rounded-full h-4 w-4`}
+                    style={{ background: bgColor+"bf"}}
+                    className={`${activeStopOver && activeStopOver['STOPOVER'] == stopOver['STOPOVER'] ? '!bg-green-800/40': '' } flex items-center justify-center rounded-full h-4 w-4`}
                 >
                     <div className={`${activeStopOver && activeStopOver['STOPOVER'] == stopOver['STOPOVER'] ? 'bg-green-800' : 'bg-gray-500'}  w-1 h-1 rounded-full`}></div>
                 </div>
@@ -919,7 +927,7 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
     }
 
     return (
-        <div className="absolute z-50 bg-[#F1F0EE] bg-white w-[450px] right-[20px] h-[calc(100vh-180px)] top-16 rounded-xl shadow-lg border-[3px] border-[#AD9A6D] overflow-hidden">
+        <div className="absolute z-[65] bg-[#F1F0EE] bg-white w-[450px] right-[20px] h-[calc(100vh-180px)] top-16 rounded-xl shadow-lg border-[3px] border-[#AD9A6D] overflow-hidden">
             <div className="max-h-full h-full text-[#54595f] overflow-y-auto overflow-x-hidden bg-[#F8F1E5] ">
                 
                 <div className="flex items-center w-full bg-white">
@@ -1081,7 +1089,7 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 
                     </h2>
 
-                    <div className="px-0 h-auto w-full relative image-div">
+                    <div className="px-0 relative image-div px-0 h-auto w-full">
                         {/* <img src={popupInfo['FEATURED IMAGE']} className="w-full"/> */}
                         <ImageViewer imageUrl={popupInfo['FEATURED IMAGE']} className="w-full" showImage={true} onClose={console.log} cnName="w-full" />
 
@@ -1095,9 +1103,13 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
                     </div>
 
                     <div className="font-semibold">
-                        <h5 className="text-title text-[1.2em] text-[#ad9a6d] mt-3">
+                        <h5 className="text-title text-[1.2em] text-[#ad9a6d] my-3">
                             {/* Nomenclature adopted by the Novara scientists */}
                             {t('nomenclature_text')}
+
+                            <div className='text-[#363636]'>
+                                {popupInfo['NOMENCLATURE ADOPTED BY AUSTRIAN SCIENTISTS']}
+                            </div>
                         </h5>
 
                         {/* <div className="">
@@ -1108,9 +1120,7 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
                             </div>
                         </div> */}
 
-                        <h5 className='text-title text-[#363636] text-[1.2em] mt-3'>
-                            <em className="">{popupInfo['SCIENTIFIC NAME']}</em>
-                        </h5>
+                        
                     </div>
 
                     <hr className='mt-3 border-black'/>
@@ -1135,11 +1145,16 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
                             {
                             ['Class', 'Collection place', 'Collection date',  'State of preservation',  'IUCN INDEX' ].map((field,i) => {
                                 let colName = language == "it" ? `ITA_${field.toLocaleUpperCase()}` : field.toLocaleUpperCase();
+
+                                if(!popupInfo[colName]) {
+                                    return;
+                                }
+
                                 return (
-                                <div key={`${field}-${i}`} className="flex flex-col justify-between text-lg border-b border-[#ad9a6d] gap-2 items-start pt-2 text-sm w-full">
-                                    <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t(field) || t(field.toLocaleLowerCase().split(" ").join("_"))}</h4>
-                                    <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[colName] || popupInfo[field.toLocaleUpperCase()]}</h5>
-                                </div>
+                                    <div key={`${field}-${i}`} className="flex flex-col justify-between text-lg border-b border-[#ad9a6d] gap-2 items-start pt-2 text-sm w-full">
+                                        <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t(field) || t(field.toLocaleLowerCase().split(" ").join("_"))}</h4>
+                                        <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[colName] || popupInfo[field.toLocaleUpperCase()]}</h5>
+                                    </div>
                                 )
                             })
         
@@ -1227,6 +1242,7 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 }
 
 const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, isSpecimen, setShowSpline }) => {
+    console.log(activeItem);
     let itemIndex = items.findIndex(entry => entry.id == activeItem.info.id);
     const [currentIndex, setCurrentIndex] = useState(itemIndex);
 
@@ -1261,7 +1277,7 @@ const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, 
             style={{
                 boxShadow: '0 -1px 20px 0 #ad9a6d'
             }}
-            className='absolute right-0 top-[130px] h-[calc(80vh-100px)] border-[2px] border-[#000000] z-50 right-5 rounded-xl overflow-hidden'
+            className='active-item absolute right-0 top-[130px] h-[calc(80vh-100px)] border-[2px] border-[#000000] z-[80] right-5 rounded-xl overflow-hidden'
         >
             {/* <Carousel items={items} currentIndex={currentIndex}> */}
 
@@ -1554,17 +1570,19 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageCl
 
           return <Marker 
             key={`${stopover['MAIN PLACE']}-${i}`} 
-            latitude={latitude} longitude={longitude} className="cursor-pointer" anchor="top"
+            latitude={latitude} longitude={longitude} 
+            className="cursor-pointer z-[60]" 
+            anchor="top"
+            style={{zIndex: hoverItem && hoverItem.id == stopover.id ? 65  : 60 }}
             onClick={() => handelClick(stopover)}
           >
             <div 
                 onMouseLeave={() => setActiveEntry(null) }
                 onMouseOver={() => setActiveEntry(stopover)}
                 style={{ 
-                    background: (bgColor || ""),
-                    zIndex: hoverItem && hoverItem.id == stopover.id ? 40  : 0
+                    background: hoverItem && hoverItem.id == stopover.id ? 'yellow' : (bgColor ? `${bgColor}BF` : ""),
                 }}
-                className={`rounded-full ${ bgColor ? `` : 'bg-red-500'} flex shadow-round p-[1px] align-center justify-center stopver-marker z-10 border-[1px] border-[#555]`}
+                className={`rounded-full ${ bgColor ? `bg-[${bgColor}]` : 'bg-red-500/75'} flex shadow-round p-[1px] align-center justify-center stopver-marker border-[1px] border-[#555]`}
             >
               <CircleDot size={10} className='bg-red-500/0 'opacity={0}/>
             </div>
@@ -1650,17 +1668,16 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem
 
     let categoryFields = {
         persons:[
-            {field:'GENDER', label:'Gender'},
-            {field:'LIFE DATA', label:'Life Data'},
-            {field:'BIRTH COUNTRY', label:'Birth Country'},
-            {field:'TITLE', label:'TITLE'},
+            {field:'LIFE DATES', label:'life dates'},
+            {field:'COUNTRY OF BIRTH', label:'country of birth'},
+
             {field:'OCCUPATION', label:'Occupation'},
-            {field:'DATE', label:'Date Encounter'}
+            {field:'ENCOUNTER DATE', label:'encounter date'}
         ],
         scientific_specimen:[
-            {field:'SUBJECT', label:' Subject '},
+            {field:'CLASS', label:'class'},
             {field:'COLLECTION PLACE', label:'Collection Place'},
-            {field:'IUCN INDEX', label:'Indice IUCN'},
+            // {field:'IUCN INDEX', label:'Indice IUCN'},
             {field:'COLLECTION DATE', label:'Collection Date'}
         ],
         institutions:[
@@ -1669,10 +1686,9 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem
             {field:'Foundation date', label:'Foundation date'}
         ],
         documents:[
-            {field:'COLLECTING  MODE', label:'Collecting  Mode'},
-            {field:'PLACE', label:'Place'},
-            {field:'PERIOD', label:'Period'},
-            {field:'YEAR / DATE', label:'Year/Date'}
+            {field:'FIRST AUTHOR', label:'Author'},
+            {field:'ALTERNATIVE TITLE / NAME', label:'title'},
+            {field:'YEAR  / DATE', label:'Year/Date'}
         ]
         
     }
@@ -1685,9 +1701,21 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem
         "scientific_specimen":"green"
     }
 
+    const getPersonName = (info) => {
+        if(info.category == "persons") {
+            let personsName = "";
+            personsName += info['LAST NAME'] == "N. A." ? "" : info['LAST NAME'];
+            personsName += info['FIRST NAME'] == "N. A." ? "" : ", " + info['FIRST NAME'];
+
+            return personsName
+        } else {
+            return "";
+        }
+    }
 
     
     const t = useTranslation();
+    const { language } = useLocalization();
     
     return(
         <>
@@ -1709,33 +1737,28 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem
                                 <div className="p-3">
 
                                     <div className="flex justify-between items-center">
-                                        <h5 className="text-[#111] text-lg font-medium capitalize">
-                                            {info['NAME'] || info['TITLE / NAME'] || info['FIRST NAME'] || info['INSTITUTION NAME']}
+                                         <h5 className="text-[#111] text-lg font-medium capitalize">
+                                            { info.category !== "documents" ? (info['NAME'] || info['TITLE / NAME'] || getPersonName(info) || info['INSTITUTION NAME']) : ""}
                                         </h5>
 
                                         <span style={{ backgroundColor:colors[info.category]}} className=" flex items-center h-5 mr-5 text-[#fff] text-xs font-medium px-2.5 rounded dak:bg-gray-700 dak:text-gray-300">
-                                            {info['category']}
+                                            {t(info['category'].split("_").join(" "))}
                                         </span>
                                     </div>
                                     
 
                                 <div className="popup-content_inner">
                                     <div className="flex gap-3">
-                                    {/* <div className="text-gray-400">ID {popupInfo['ID']} - Persons</div> */}
                                         <div className="relative bg-gray-300 rounded-md min-w-[90px] w-[90px] h-inherit overflow-hidden">
                                             {info['FEATURED IMAGE'] && <img src={info['FEATURED IMAGE']} alt="" className='rounded-md w-[90px] object-cover h-full' onClick={() => handleImageClick(info['FEATURED IMAGE'])} />}
                                             {info['IMAGE'] && <img src={info['IMAGE']} alt="" className='rounded-md w-full object-cover h-full' onClick={() => handleImageClick(info['IMAGE'])} />}
-
-                                            {/* {info['FEATURED IMAGE'] && <ImageViewer imageUrl={info['FEATURED IMAGE']} alt="" className='rounded-md w-[90px] object-cover h-full' />}
-                                            {info['IMAGE'] && <ImageViewer imageUrl={info['IMAGE']} alt="" className='rounded-md w-full object-cover h-full' />} */}
-
                                         </div>
                                    
                                         <div className='flex-1'>
                                             {
-                                            categoryFields[info.category].map(field => (<div key={field.field} className="flex flex">
+                                            categoryFields[info.category].map(field => (<div key={field.field} className="flex flex-col">
                                                 <div className="mr-1 capitalize">{t(field.label.toLocaleLowerCase().trim()) || field.label}: </div>
-                                                <div className="font-semibold">{info[field.field]}</div>
+                                                <div className="font-semibold">{info[ language == "it" ? `ITA_${field.field}` : field.field] || info[field.field]}</div>
                                             </div>))
                                             }
                                         </div>

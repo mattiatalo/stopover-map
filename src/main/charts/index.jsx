@@ -13,6 +13,7 @@ import {
     Legend,
   } from 'chart.js';
   import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { useLocalization, useTranslation } from '../../components/LocalizationProvider';
   
   ChartJS.register(
     ArcElement,
@@ -26,12 +27,13 @@ import {
   );
 
 export default function Charts({ tableData, tableName}) {
-    console.log(tableName);
+    // console.log(tableName);
   return (
     <div className='p-4'>
         { tableName == 'scientific_specimen' && <SpecimenCharts tableData={tableData} tableName={tableName} /> }
         { tableName == "documents" && <DocumentCharts tableData={tableData} tableName={tableName} /> }
         { tableName == "persons" && <PersonsCharts tableData={tableData} tableName={tableName} /> }
+        { tableName == "institutions" && <InstitutionCharts tableData={tableData} tableName={tableName} /> }
     </div>
   )
 }
@@ -58,6 +60,29 @@ const SpecimenCharts = ({ tableData, tableName}) => {
             
             
             
+        </div>
+    )
+        
+}
+
+const InstitutionCharts = ({ tableData, tableName}) => {
+    const t = useTranslation();
+
+    return (
+        <div className="charts">  
+            <div className="grid grid-cols-1">
+                <div className="w-full">
+                    <h5 className='my-3 capitalize'>Institution by Place</h5>
+                    <PieChartSpecimen tableData={tableData} columnName={"MAIN PLACE"} title={t("place")} type="bar" percentage={false} />
+                </div>
+            </div>  
+
+            <div className="grid grid-cols-1">
+                <div className="w-full">
+                    <h5 className='my-3'>Institutions By Typology</h5>
+                    <PieChartSpecimen tableData={tableData} columnName={"Typology"} title={t("typology")} type="bar" percentage={false} />
+                </div>
+            </div>                   
         </div>
     )
         
@@ -92,7 +117,7 @@ const PersonsCharts = ({ tableData, tableName}) => {
                 </div>
 
                 <div className="w-full">
-                    <h5 className='my-3'>ENCOUNTERED PEOPLE BY PLACES OF ENCOUNTER</h5>
+                    <h5 className='my-3'>ENCOUNTERED PEOPLE BY PLACES OF BIRTH</h5>
                     <PieChartSpecimen tableData={tableData} columnName={"COUNTRY OF BIRTH"} title="COUNTRY OF BIRTH" type="bar" percentage={false} label={false} />
                 </div>
 
@@ -120,7 +145,8 @@ const PersonsCharts = ({ tableData, tableName}) => {
 
 const PieChartSpecimen = ({tableData, columnName, title, type="pie", percentage=true }) => {
     // console.log(percentage);
-    let { values, labels} = groupDataBy(tableData, columnName, percentage);
+    const { language } = useLocalization();
+    let { values, labels} = groupDataBy(tableData, columnName, percentage, language);
 
     const options = {
         indexAxis: 'x',
@@ -167,12 +193,10 @@ const PieChartSpecimen = ({tableData, columnName, title, type="pie", percentage=
                     return 'white';
                 },
                 formatter: function(value, ctx) {
-                    console.log(ctx);
                     return !percentage ? values[ctx.dataIndex] : `${Math.round(value * 1000) / 1000}%`;
                 },
                 value:{
                     formatter: function(value, ctx) {
-                        console.log(value);
                         return `${Math.round(value * 1000) / 1000}%`;
                     },
                 }
@@ -211,12 +235,18 @@ const PieChartSpecimen = ({tableData, columnName, title, type="pie", percentage=
 
 }
 
-const groupDataBy = (data, column, percentage=true) => {
+const groupDataBy = (data, column, percentage=true, language) => {
     // console.log(percentage);
-    let groups = [...new Set(data.map(entry => entry[column]))].filter(value => value);
+    let colName = language == "it" ? `ITA_${column}` : column;
+
+    let groups = [...new Set(data.map(entry => entry[colName]))].filter(value => value);
+    if(!groups.length) {
+        colName = column;
+        groups = [...new Set(data.map(entry => entry[column]))].filter(value => value);
+    }
 
     let values = groups.map(entry => {
-        let count = data.filter(item => item[column] == entry).length;
+        let count = data.filter(item => item[colName] == entry).length;
 
         return percentage ? parseFloat((count * 100/data.length).toFixed(1)) : count; 
     });
