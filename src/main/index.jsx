@@ -30,6 +30,7 @@ import { RiArrowDownLine, RiArrowDownSLine, RiArrowLeftSLine, RiArrowRightSLine,
 import Charts from './charts';
 import { DocumentsDiv, InstitutionDiv, PersonsDiv, StopOverDiv } from '../components/InfoDivs';
 import { Parser } from 'html-to-react';
+import { Card, DocumentCard, InstitutionCard, PersonCard, SpecimenCard } from '../components/PopupCards';
 
 
 dayjs.extend(customParseFormat);
@@ -442,6 +443,7 @@ export default function MainPage() {
                             handleImageClick={setActiveImage}
                             hoverItem={hoverItem}
                             activeItem={activeItem}
+                            setShowSpline={setShowSpline}
                             items={allData.filter(entry => activeLayers.includes(entry.category)).filter(entry => entry.stopover == activeStopOver['MAIN PLACE'])} 
                             setActiveItem={setActiveItem} 
                         /> : "" }
@@ -743,7 +745,7 @@ export default function MainPage() {
                 }
 
                 <CollapsibleTab
-                    position="top-left"
+                    position="bottom-left"
                     collapseIcon={<ChevronsRight className="text-gray-500"/>}
                     collapseClass="summary-cards absolute z-20 left-6 bottom-4  min-w-[40px] min-h-[40px]"
                 >
@@ -1243,7 +1245,10 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 
 const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, isSpecimen, setShowSpline }) => {
     console.log(activeItem);
-    let itemIndex = items.findIndex(entry => entry.id == activeItem.info.id);
+    console.log(items);
+    let item = [...items].find(entry => entry.ID == activeItem.info.ID);
+    console.log(item);
+    let itemIndex = [...items].findIndex(entry => entry.ID == activeItem.info.ID);
     const [currentIndex, setCurrentIndex] = useState(itemIndex);
 
     const nextIndex = () => {
@@ -1252,7 +1257,6 @@ const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, 
             setActiveItem({ info:items[currentIndex + 1], table:activeItem.table })
         } else {
             setCurrentIndex(0);
-
             setActiveItem({ info:items[0], table:activeItem.table })
         }
     }
@@ -1271,6 +1275,8 @@ const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, 
     if(!activeItem) {
         return (<div>Item Not Found</div>);
     }
+
+    console.log(itemIndex);
 
     return (
         <div 
@@ -1598,9 +1604,55 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageCl
             longitude={activeEntry['COORDINATES'][1]} 
             offset={[15,15]} anchor="left" 
             closeOnMove={false}
-            className="px-1 max-w-[300px] py-1"
+            className="max-w-[300px]"
           >
-            <div className="w-auto">
+            <Card info={{...activeEntry, category:"stopovers"}}  index={0} items={[{...activeEntry, category:"stopovers"}]} setActiveItem={() => {}}>
+                <div className="flex flex-col md:flex-col w-[300px]">
+                    <div className="w-full h-[200px] relative">
+                        <a href="#">
+                            <img className="w-full h-full object-cover"
+                                src={activeEntry['IMAGES']}
+                                alt="Sunset in the mountains" />
+                            <div
+                                className="hover:bg-gray-900 transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-transparent opacity-25">
+                            </div>
+                        </a>
+                    </div>
+                    <div className="md:w-full flex flex-col justify-center mb-5 mt-3">
+                        <div className="px-6">
+                            <a href="#"
+                                className="mt-1 font-medium text-xl inline-block hover:text-red-900 transition duration-500 ease-in-out my-2">
+                                    {language == "it" ?
+                                        `${activeEntry['ITA_MAIN PLACE']} (${activeEntry['ITA_STOPOVER']})` :
+                                        `${activeEntry['MAIN PLACE']} (${activeEntry['STOPOVER']})`
+                                    }
+                                </a>
+                           
+
+                            <div className="text-xs bg-gray-100 px-4 py-1 w-fit text-black border border-cyan-900 mb-4 ml-[-5px] rounded-2xl" 
+                                // style={{ backgroundColor:(VoyageColors[activeEntry['VOYAGE VARIANTS']] || "gray")}}
+                            >
+                                <p className='span-1'>{activeEntry['VOYAGE VARIANTS']}</p>
+                            </div>
+
+                            <p className="text-gray-500 text-sm font-bold my-1">
+                                Arrival: <span className="text-rose-900">17/03/1857</span>
+                            </p>
+                            <hr className="border-gray-300 my-2"/>
+                            <p className="text-gray-500 text-sm font-bold my-1">
+                                Departure: <span className="text-rose-900">31/03/1857</span>
+                            </p>
+                            <hr className="border-gray-300 my-2"/>
+                            <p className="text-gray-500 text-sm font-bold">
+                                Duration of stay (days): <span className="text-rose-900">15</span>
+                            </p>
+
+                        </div>
+                    </div>
+                </div>
+            </Card>
+
+            <div className="w-auto hidden">
               <div className="flex gap-3 min-h-[100px]">
                 <div className={`relative bg-gray-300 rounded-md min-w-[90px] h-inherit overflow-hidden`}>
                     {/* <div className="h-full bg-orange w-full object-cover" style={{ backgroundImage:`url(${activeEntry['IMAGES']})`}}></div> */}
@@ -1656,7 +1708,7 @@ const getMarkerIcon = (category) => {
 }
 
 
-const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem }) => {
+const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem, setShowSpline }) => {
     const [popupInfo, setPopupInfo] = useState(null);
 
     const updateItem = (entry) => {
@@ -1728,7 +1780,20 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem
                     onClose={() => {setPopupInfo(null); setActiveItem(null)}}
                     className="overflow-x-hidden"
                 >
-                    <Carousel items={popupInfo}>
+                    <Card info={""}  index={0} items={popupInfo} setActiveItem={setActiveItem}>
+                        {popupInfo.map((info,i) => {
+                            return (
+                                <>
+                                { info.category == "persons" && <PersonCard info={info} key={i} /> }
+                                { info.category == "documents" && <DocumentCard info={info} key={i} /> }
+                                { info.category == "institutions" && <InstitutionCard info={info} key={i} /> }
+                                { info.category == "scientific_specimen" && <SpecimenCard info={info} key={i} setShowSpline={setShowSpline} setActiveItem={setActiveItem} /> }
+                                </>
+                            )
+                        })}
+                    </Card>
+
+                    {/* <Carousel items={popupInfo}>
                         {popupInfo.map((info,i) => (
                         <div className="popup-content min-w-full bg-red-0 relative min-w-[300px] p-0" key={i}>
                            
@@ -1773,7 +1838,7 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem
                                 </div>
                             </div>
                         ))}
-                        </Carousel>
+                        </Carousel> */}
                     </Popup> ): ""
                 }
             {items.filter(document => document['COORDINATES'] && document['COORDINATES'].length == 2)

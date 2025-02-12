@@ -79,6 +79,7 @@ export async function getData(updateDownloadProgress) {
     });
 
     // ["institutions", "persons", "scientific_specimen", "documents"]
+    console.log(json_data['Stopovers']);
     // console.log(json_data['Scientific specimens'].filter(place => place['SPLINE-CODE']));
     return {
         persons:[...json_data['Persons']].map(entry => ({...entry, stopover:entry['MAIN ENCOUNTER PLACE'], category:'persons'})),

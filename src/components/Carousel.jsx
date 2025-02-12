@@ -19,9 +19,7 @@ const Carousel = ({ children: slides, autoSlide = false, autoSlideInterval = 300
     }, [autoSlide, autoSlideInterval, next])
 
     useEffect(() => {
-        // if(curr) {
-            setCurr(currentIndex);
-        // }
+        setCurr(currentIndex);
     }, [items, currentIndex])
 
     return (
