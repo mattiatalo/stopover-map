@@ -6,7 +6,7 @@ export default function ImageViewer(props) {
     const [showModal, setShowModal] = useState(props.showImage ? false : true);
 
     return (
-        <div className='w-full relative overflow-hidden rounded-[10px]'>
+        <div className='w-full relative overflow-hidden rounded-[10px] z-[70]'>
             { props.showImage ? <img src={props.imageUrl} className={props.className + ` h-auto w-full rounded-[10px] ${props.cnName}`} onClick={() => setShowModal(true)}/> : ""}
             <div 
                 id="static-modal" 

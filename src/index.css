@@ -136,12 +136,21 @@ body {
   font-style: normal;
 }
 
+#voyage option:after {
+  content: " ";
+  height: 5px;
+  width: 5px;
+  background: #c00;
+  border-radius: 5px;
+  display: inline-block;
+}
+
 a.mapboxgl-ctrl-logo {
   display: none !important;
 }
 
 .mapboxgl-map .mapboxgl-popup-content {
-  border-radius: 10px;
+  border-radius: 1rem;
   padding: 0px;
   box-shadow: none !important;
 }
@@ -174,14 +183,21 @@ div.mapboxgl-popup {
 
 /* .mapboxgl-popup-close-button */
 .mapboxgl-popup-close-button {
-   top:0.6rem !important;
-   right:0.5rem !important; 
-   padding:0.5rem 0.7rem !important;
+   top:0.75rem !important;
+   right:0.75rem !important; 
+   /* padding:0.5rem !important; */
    border-radius:50% !important;
    background:#d1d5db !important;
    font-size: 25px !important;
    color:#6d6d6d;
    border: 1px solid #ddd !important;
+
+   display: flex;
+   align-items: center;
+   justify-content: center;
+
+   width: 32px;
+   height: 32px;
 }
 
 .mapboxgl-map .mapboxgl-popup-tip {
@@ -256,10 +272,11 @@ div.mapboxgl-popup {
 }
 
 
-.zoom-in:hover {
+.zoom-in:hover, .mapboxgl-popup-close-button:hover {
   filter: brightness(0.8);
   transform: scale(1.1);
   background-color: #000 !important;
+  color:#fff;
 }
 
 .animation-spin {

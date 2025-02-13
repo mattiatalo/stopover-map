@@ -79,9 +79,15 @@ export default function MainPage() {
     const [ activeTable, setActiveTable ] = useState(null);
     const [ isSummaryClick, setIsSummaryClick] = useState(false);
     const [ activeLink, setActiveLink] = useState("");
-    const [downloadProgress, setDownloadProgress] = useState(0);
-    const [isDataLoading, setIsDataLoading ] = useState(false);
-    const [showSpline, setShowSpline] = useState(false);
+    const [ downloadProgress, setDownloadProgress] = useState(0);
+    const [ isDataLoading, setIsDataLoading ] = useState(false);
+    const [ showSpline, setShowSpline] = useState(false);
+    const [ popupInfo, setPopupInfo ] = useState(null);
+    const [showDetailTab, setShowDetailTab ] = useState(false);
+    const [imgErr, setImgErr] = useState(false);
+
+
+    const popupRef = useRef(null);
 
     const { language } = useLocalization();
     const t = useTranslation();
@@ -116,15 +122,41 @@ export default function MainPage() {
     const handleStopoverClick = (stopOver) => {
         // flyto the location 
         if(mapRef.current) {
-          mapRef.current.flyTo({ center: [...stopOver['COORDINATES']].reverse(), zoom:10 });
+            if(mapRef.current.getZoom() > 10) {
+                mapRef.current.setCenter([...stopOver['COORDINATES']].reverse());
+            } else { 
+                mapRef.current.flyTo({ center: [...stopOver['COORDINATES']].reverse(), zoom:10 });
+            }
+          
         }
     
         // update the stopover
-        setActiveStopOver(stopOver);
-        setActiveTab("stopover");
+        if(activeStopOver && stopOver.id == activeStopOver.id) {
+            // 
+        } else {
+            ///   
+        }
+
+        setActiveStopOver({...stopOver, rand:Math.random()});
+        
+        setShowDetailTab(false);
+        setActiveTab("");
         setActiveItem("");
         setActiveLink("");
         setLayerTabOpen(false);
+
+       
+        if(popupRef.current) {
+            console.log(popupRef.current);
+            if(!popupRef.current.isOpen()) {
+
+                console.log("Popup Ref")
+                // let latitude= stopOver['COORDINATES'][0] 
+                // let longitude= stopOver['COORDINATES'][1] 
+                // popupRef.current.setLngLat({ lat:latitude, lng:longitude});                
+                popupRef.current.addTo(mapRef.current.getMap());
+            }
+        }
     }
 
     const updateDownloadProgress = ({ loaded, total}) => {
@@ -352,7 +384,7 @@ export default function MainPage() {
                     Loading.... {downloadProgress}%
                 </div>    
             </div>}
-             {activeImage && <ImageViewer imageUrl={activeImage} alt="" className='rounded-md w-full object-cover h-full' showImage={false} onClose={() => setActiveImage(null)} />}
+             {activeImage && <ImageViewer imageUrl={activeImage} alt="" className='rounded-md w-full object-cover h-full z-[70]' showImage={false} onClose={() => setActiveImage(null)} />}
             <div className="map-container relative flex w-full">
            
 
@@ -434,61 +466,92 @@ export default function MainPage() {
 
                 <div className="w-full">
                     <MainMap projection={"globe"} basemap={"daks"} ref={mapRef}>
-                        {state.stopovers.length && <StopOVerMarkers hoverItem={hoverStopover} stopovers={state.stopovers} handleImageClick={setActiveImage} handelClick={handleStopoverClick} activeStopOver={activeStopOver}/>}
+                        {state.stopovers.length && <StopOverMarkers 
+                            hoverItem={hoverStopover} 
+                            stopovers={state.stopovers} 
+                            handleImageClick={setActiveImage} 
+                            handelClick={handleStopoverClick} 
+                            activeTab={activeTab}
+                            activeStopOver={activeStopOver}
+                        />}
+
                         <Source type="geojson" data={Novara}>
                             { <Layer {...dataLayer} /> }
                         </Source>
 
                         { activeStopOver  ? <Markers 
                             handleImageClick={setActiveImage}
+                            setShowDetailTab={setShowDetailTab}
                             hoverItem={hoverItem}
                             activeItem={activeItem}
+                            popupInfo={popupInfo}
+                            setPopupInfo={setPopupInfo}
                             setShowSpline={setShowSpline}
                             items={allData.filter(entry => activeLayers.includes(entry.category)).filter(entry => entry.stopover == activeStopOver['MAIN PLACE'])} 
                             setActiveItem={setActiveItem} 
+                            setActiveTab={setActiveTab}
                         /> : "" }
 
-                        {/* {activeStopOver ? 
+                        {(!showDetailTab && activeStopOver) ? 
                                 <Popup
                                     latitude={activeStopOver['COORDINATES'][0]} 
                                     longitude={activeStopOver['COORDINATES'][1]} 
                                     offset={[15,15]} anchor="left" 
-                                    closeOnMove={false}
-                                    className="px-1 max-w-[300px] py-1"
+                                    // closeOnMove={false}
+                                    // onClose={() => popupRef.current == null}
+                                    // closeOnClick={true}
+                                    ref={popupRef}
+                                    className="px-0 max-w-[300px] py-0 rounded-[1.2rem]"
                                 >
-                                    <div className="w-auto">
-                                    <div className="flex items-cente gap-3 min-h-[100px]">
-                                        <div className={`relative bg-gray-300 rounded-md min-w-[90px] h-inherit overflow-hidden`}>
-                                            {/* <div className="h-full bg-orange w-full object-cover" style={{ backgroundImage:`url(${activeEntry['IMAGES']})`}}></div> 
-                                        {activeStopOver['IMAGES'] && <img src={activeStopOver['IMAGES']} alt="" className='object-fill h-full w-[90px]' />}
-                                        </div>
-                        
-                                        <div className=''>
-                                        <div className="fontsemibold">
-                                            {language == "it" ?
-                                                `${activeStopOver['ITA_MAIN PLACE']} (${activeStopOver['ITA_STOPOVER']})` :
-                                                `${activeStopOver['MAIN PLACE']} (${activeStopOver['STOPOVER']})`
-                                            }
-                                        </div>
-                                        <div className="text-gray-400 flex">
-                                            {t('date')}: {
-                                                language == "it" ? (activeStopOver['ITA_ARRIVAL DAY'] || activeStopOver['ARRIVAL DAY']) : activeStopOver['ARRIVAL DAY']
-                                            } - {
-                                                language == "it" ? (activeStopOver['ITA_DEPARTURE DAY'] || activeStopOver['DEPARTURE DAY']) : activeStopOver['DEPARTURE DAY']
-                                            }
-                                        </div>
+                                    <Card setPopupInfo={() => {}} setActiveTab={setActiveTab} setShowDetailTab={setShowDetailTab} info={{...activeStopOver, category:"stopover"}}  index={0} items={[{...activeStopOver, category:"stopover"}]} setActiveItem={() => {}}>
+                                        <div className="flex flex-col md:flex-col w-[300px]">
+                                            <div className="w-full h-[200px] relative" style={{ background: (!activeStopOver['IMAGES'] || imgErr) ? '#000' : '#fff' }}>
+                                                <a href="#">
+                                                    {activeStopOver['IMAGES'] && <img className="w-full h-full object-cover"
+                                                        src={activeStopOver['IMAGES']}
+                                                        onError={() => setImgErr(true)}
+                                                        alt="Sunset in the mountains" /> }
+                                                    <div
+                                                        onClick={(e) => { e.stopPropagation(); setActiveImage(activeStopOver['IMAGES'])}}
+                                                        className="hover:bg-gray-900 transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-transparent opacity-25">
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div className="md:w-full flex flex-col justify-center mb-5 mt-3">
+                                                <div className="px-6">
+                                                    <a href="#"
+                                                        className="mt-1 font-medium text-xl inline-block hover:text-red-900 transition duration-500 ease-in-out my-2">
+                                                            {language == "it" ?
+                                                                `${activeStopOver['ITA_MAIN PLACE']} (${activeStopOver['ITA_STOPOVER']})` :
+                                                                `${activeStopOver['MAIN PLACE']} (${activeStopOver['STOPOVER']})`
+                                                            }
+                                                        </a>
+                                                
 
-                                        <div className="px-0">
-                                            {t('duration')}: {activeStopOver['DURATION (days)']}
-                                        </div>
+                                                    <div className="text-xs bg-gray-100 px-4 py-1 w-fit text-black border border-cyan-900 mb-4 ml-[-5px] rounded-2xl" 
+                                                        // style={{ backgroundColor:(VoyageColors[activeStopOver['VOYAGE VARIANTS']] || "gray")}}
+                                                    >
+                                                        <p className='span-1'>{activeStopOver['VOYAGE VARIANTS']}</p>
+                                                    </div>
 
-                                        <div className="icon-box shadow-md p-2 rounded-md mt-1 min-w-[200px]" style={{ backgroundColor:(VoyageColors[activeStopOver['VOYAGE VARIANTS']] || "gray")}}>
-                                            <p className='span-1'>{t(activeStopOver['VOYAGE VARIANTS'])}</p>
+                                                    <p className="text-gray-500 text-sm font-bold my-1">
+                                                        Arrival: <span className="text-rose-900">17/03/1857</span>
+                                                    </p>
+                                                    <hr className="border-gray-300 my-2"/>
+                                                    <p className="text-gray-500 text-sm font-bold my-1">
+                                                        Departure: <span className="text-rose-900">31/03/1857</span>
+                                                    </p>
+                                                    <hr className="border-gray-300 my-2"/>
+                                                    <p className="text-gray-500 text-sm font-bold">
+                                                        Duration of stay (days): <span className="text-rose-900">15</span>
+                                                    </p>
+
+                                                </div>
+                                            </div>
                                         </div>
-                                        </div>
-                                    </div>
-                                    </div>
-                                </Popup> : ""} */}
+                                    </Card>
+                                    
+                                </Popup> : ""}
                     </MainMap>
                 </div>
 
@@ -554,7 +617,12 @@ export default function MainPage() {
                                         className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
                                     >
                                         <option value="" >{t('all_voyages')}</option>
-                                        {(voyages.map((voyage, i) => (<option key={i} value={voyage} style={{ background:(voyageColorCards[voyage] || "#fff")}}>{t(voyage) || voyage}</option>) ))}
+                                        {(voyages.map((voyage, i) => (<option 
+                                            key={i} value={voyage}
+                                            style={{ background:(voyageColorCards[voyage] || "#ffffff") + "ba"}} 
+                                        >
+                                            {t(voyage) || voyage}
+                                        </option>) ))}
                                     </select>
                                 </div>
 
@@ -659,7 +727,7 @@ export default function MainPage() {
 
 
 
-                { activeStopOver ? 
+                { showDetailTab ? 
                     <DetailTab 
                         setActiveStopOver={() => setActiveStopOver("")} 
                         setActiveTab={setActiveTab}
@@ -669,6 +737,7 @@ export default function MainPage() {
                         activeTab={activeTab}
                         activeStopOver={activeStopOver}
                         setActiveLink={setActiveLink}
+                        setShowDetailTab={setShowDetailTab}
                         setActiveItem={setActiveItem}
                     /> : 
                     ""
@@ -842,7 +911,7 @@ export default function MainPage() {
                         setShowSpline={setShowSpline}
                     />  }
 
-                { ( showSpline && activeItem && activeItem.table == "scientific_specimen")  ? <SpecimenSplineModal activeItem={activeItem} setShowSpline={setShowSpline} /> : "" }
+                { ( showSpline && activeItem && activeItem.table == "scientific_specimen")  ? <SpecimenSplineModal activeItem={activeItem} spline={showSpline} setShowSpline={setShowSpline} /> : "" }
             </div>
 
             {/* {activeLink ? <Modal activeTab={activeTab} isOpen={true} toggleActiveTable={setActiveLink}>
@@ -917,16 +986,18 @@ const StopOverCard = ({stopOver, onClick, activeStopOver, setHoverStopover, hove
     )
 }
 
-const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActiveItem, setHoverItem, tableInfo, activeStopOver, setActiveLink}) => {
+const DetailTab = ({ setActiveTab, setShowDetailTab, data, activeTab, setActiveItem, setHoverItem, tableInfo, activeStopOver, setActiveLink}) => {
     const t = useTranslation();
 
     let colors = {
-        "stopovers":"red",
+        "stopover":"red",
         "persons":"orange",
         "documents":"#5f9ea0",
         "institutions":"grey",
         "scientific_specimen":"green"
     }
+    
+    console.log(activeTab);
 
     return (
         <div className="absolute z-[65] bg-[#F1F0EE] bg-white w-[450px] right-[20px] h-[calc(100vh-180px)] top-16 rounded-xl shadow-lg border-[3px] border-[#AD9A6D] overflow-hidden">
@@ -937,7 +1008,7 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
                         <span className="font-semibold capitalize">{t('details')} ({data.length})</span>
                     </div>
 
-                    <button className="zoom-in cursor-pointer rounded-full border-[#E9E4D8] border-[5px] mx-2 p-1 bg-[#AD9A6D] text-[#E9E4D8]" onClick={() => setActiveStopOver()}>
+                    <button className="zoom-in cursor-pointer rounded-full border-[#E9E4D8] border-[5px] mx-2 p-1 bg-[#AD9A6D] text-[#E9E4D8]" onClick={() => setShowDetailTab(false)}>
                         <X size={22}/>
                     </button>
                 </div>
@@ -1008,12 +1079,12 @@ const DetailTab = ({ setActiveTab, setActiveStopOver, data, activeTab, setActive
     )
 }
 
-const SpecimenSplineModal = ({ activeItem, setShowSpline }) => {
-    console.log(activeItem);
+const SpecimenSplineModal = ({ activeItem, setShowSpline, spline }) => {
+    console.log(splint);
     return(
-      <Modal activeTab={activeItem.info['NAME']} toggleActiveTable={() => setShowSpline(false)} isOpen={true}>
+      <Modal activeTab={activeItem.info['NAME']} toggleActiveTable={() => setShowSpline("")} isOpen={true}>
         <iframe 
-            className="spline-canvas h-[80%] my-auto" src={`https://my.spline.design/${activeItem.info['SPLINE-CODE']}`} width="100%" frameBorder="0"></iframe>
+            className="spline-canvas h-[80%] my-auto" src={`https://my.spline.design/${spline}`} width="100%" frameBorder="0"></iframe>
       </Modal>
       
     )
@@ -1097,7 +1168,7 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 
                         { 
                             popupInfo['SPLINE-CODE']  && 
-                            <button className="absolute right-4 bottom-4 bg-[#fff] rounded-md capitalize rounded-md p-0 w-16 h-16 z-12" onClick={() => setShowSpline(true)}>
+                            <button className="absolute right-4 bottom-4 bg-[#fff] rounded-md capitalize rounded-md p-0 w-16 h-16 z-12" onClick={() => setShowSpline(popupInfo['SPLINE-CODE'])}>
                                 <img src="/3d_image.jpg" alt="" className='h-10 w-auto rounded-md' />
                             </button>
                         }
@@ -1319,9 +1390,6 @@ const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, 
 }
 
 const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOver=false, category, paginationText }) => {
-    const t = useTranslation();
-    const { language } = useLocalization();
-
     let colors = {
         "stopovers":"red",
         "persons":"orange",
@@ -1330,33 +1398,10 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
         "scientific_specimen":"green"
     }
 
-
-    let fields = {
-        stopovers:['DEPARTURE DAY', 'ARRIVAL DAY', 'DURATION (days)', 'VOYAGE VARIANTS', 'ANCHORAGE TYPOLOGY'],
-        institutions:["Foundation date", 'Director',  "Typology"  ],
-        documents:["MAIN COLLECTION PLACE", "SECONDARY COLLECTION PLACE", "ALTERNATIVE TITLE / NAME", "ENGLISH TRANSLATION", "FIRST AUTHOR", "SECOND AUTHOR",
-            "TRANSLATED BY", "EDITED BY", "KIND OF SOURCE", "MEDIUM", "MEASURES / QUANTITY / FORMAT", "LANGUAGE", "YEAR  / DATE", "PUBLISHER / PRINTER", 
-            "PERIOD", "MAIN LOCAL INSTITUTION INVOLVED", "MAIN LOCAL PERSON INVOLVED", "COLLECTING MODE", "CURRENT OWNER", "COLLECTION"
-        ],
-        persons:["GENDER", "LIFE DATES", "COUNTRY OF BIRTH", "TITLE", "OCCUPATION", "OCCUPATION TYPOLOGY", "INSTITUTION TYPOLOGY", "INSTITUTION NAME", 
-            "MAIN ENCOUNTER PLACE", "SECONDARY ENCOUNTER PLACE", "ENCOUNTER DATE", 
-        ]
-    }
-
     const onLinkClick = (e) => {
         e.preventDefault();
         setActiveLink(e.target.href);
     }
-
-    // let description = (popupInfo['FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ROLE DESCRIPTION'] || popupInfo['DESCRIPTION'] || "");
-    // const description = language == "it" ? 
-    //     (popupInfo['ITA_FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ITA_ROLE DESCRIPTION'] || popupInfo['ITA_DESCRIPTION'] || "") :
-    //     (popupInfo['FROM THE SCIENTIFIC VOLUMES'] || popupInfo['ROLE DESCRIPTION'] || popupInfo['DESCRIPTION'] || "");
-
-
-    // let personsName = "";
-    // personsName += popupInfo['LAST NAME'] == "N. A." ? "" : popupInfo['LAST NAME'];
-    // personsName += popupInfo['FIRST NAME'] == "N. A." ? "" : " " + popupInfo['FIRST NAME'];
 
     if(category == "stopovers") {
         return <StopOverDiv 
@@ -1426,146 +1471,27 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
                     /> 
                 }
 
-               {/* { !['institutions', 'persons', 'documents'].includes(category) && <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
-               
-                { popupInfo.category  && <div className="shadow-md rounded-full mb-4 mt-2 border-[1px] px-5 w-fit min-w-20 border-black text- text-center uppercase" style={{ borderColor: colors[popupInfo.category]}}>
-                    <span className="font-semibold" >{popupInfo.category}</span>
-                </div> }
-
-                { language == "it" && 
-                    <div  style={{ backgroundColor:(VoyageColors[popupInfo['VOYAGE VARIANTS']] || "gray")}} className='p-2 rounded-md my-2 text-title'>
-                        {language == "it" ? popupInfo['ITA_VOYAGE VARIANTS'] : popupInfo['VOYAGE VARIANTS']}
-                    </div> 
-                }               
-  
-                <div className="content h-full">
-                  <div className="header-section flex flex-col">
-                    <h2 className="text-[#363636] text-[1.5em]">
-                        <strong>{popupInfo['NAME'] || popupInfo['TITLE / NAME'] || (`${popupInfo['FIRST NAME'] ? personsName : "" }`) || popupInfo['INSTITUTION NAME']}</strong>                       
-  
-                    {/* <h3 className="ct-headline text-[#363636] mb-2 text-[1.3em] py-0"> 
-                      <span  className="ct-span">
-                        <p>
-                          <em className="italic">{popupInfo['SCIENTIFIC NAME']}</em></p>
-                      </span>
-                    </h2>
-
-                    {popupInfo['ITA_MAIN PLACE'] && <div>
-                            { language == "it" ? popupInfo['ITA_MAIN PLACE'] : popupInfo['MAIN PLACE']} ({ language == "it" ? popupInfo['ITA_MAIN PLACE'] : popupInfo['MAIN PLACE']})
-                    </div> }
-
-                    <div className="px-0 h-auto w-full">
-                        {/* {popupInfo['FEATURED IMAGE'] && <img src={popupInfo['FEATURED IMAGE']} alt="" className='h-auto' />}
-                        {popupInfo['IMAGE'] && <img src={popupInfo['IMAGE']} alt="" className='h-auto' />} 
-
-                        {popupInfo['FEATURED IMAGE'] && <ImageViewer imageUrl={popupInfo['FEATURED IMAGE']} alt="" className='h-auto' showImage={true} onClose={console.log}/>}
-                        {popupInfo['IMAGE'] && <ImageViewer imageUrl={popupInfo['IMAGE']} alt="" className='h-auto' showImage={true} onClose={console.log}/>}
-                        
-                        {popupInfo['IMAGES'] && <ImageViewer imageUrl={popupInfo['IMAGES']} alt="" className='h-auto' showImage={true} onClose={console.log}/>}
-                        
-                        <figcaption className='my-3 text-sm'>
-                            {language == "it" ? popupInfo['ITA_CAPTION'] : popupInfo['CAPTION']}
-                        </figcaption>
-                    </div>
-                    <hr className='mt-3 border-black'/>  
-                  </div>
-                    
-
-                  <div className="body-section">
-                    <div className="description my-[25px] text-[14px] text-gray-700">
-                      <div>
-                        {(description && description !== "N. A.") ? description.split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>)) : ""}
-                      </div>
-                    </div>
-
-                    
-                    <div className="summary-info bg-[#D4D4D4] flex-[0.6] p-[20px] rounded-[10px] h-full my-[13px]">
-        
-                        <div className="info-section grid grid-cols-1 gap-2">
-                            {
-                                fields[category || 'stopovers'].map((field,i) => {
-                                    return (
-                                        (popupInfo[field] && popupInfo[field] !== "N. A.") ? <div key={`${field}-${i}`} className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
-                                            <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full capitalize">{t(field.toLocaleLowerCase()) || field}</h4>
-                                            <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[field] || "N.A"}</h5>
-                                        </div> : ""
-                                    )
-                            })
-        
-                            }   
-                        </div>
-                    </div>
-
-                    { (popupInfo['QUOTATION'] && popupInfo['QUOTATION'] !== "N. A.") ? <div className="description my-[25px] text-[14px] text-gray-700">
-                        <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('quotation')}</h3>
-                      <div>
-                        {(popupInfo['QUOTATION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
-                      </div>
-
-                      <hr className='my-3 border-black'/>
-                    </div> : "" }
-
-                    { (popupInfo['RESOURCES'] && popupInfo['RESOURCES'] !== "N. A.") ? <div className="description my-[25px] text-[14px] text-gray-700">
-                        <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('resources')}</h3>
-                      <div>
-                        {(popupInfo['RESOURCES'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
-                      </div>
-
-                      <hr className='my-3 border-black'/>
-                    </div> : "" }
-                    
-                    {(popupInfo['ROLE DESCRIPTION'] && popupInfo['ROLE DESCRIPTION'] !== "N. A.") ? <div className="description my-[25px] text-[14px] text-gray-700">
-                        <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">{t('role description')}</h3>
-                        <div>
-                            {
-                                language == "it" ? (popupInfo['ITA_ROLE DESCRIPTION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>)) :
-                                (popupInfo['ROLE DESCRIPTION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>)) 
-                            }
-                        </div>
-                        <hr className='my-3 border-black'/>
-                    </div> : ""}
-  
-                    {(popupInfo['REFERENCES'] || "") ?
-                    <>
-                    <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full">{t('references')}</h3>
-                    <div className="mt-[2px] mb-[25px] text-[14px] text-gray-700">
-                        {(popupInfo['REFERENCES'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
-                    </div>
-
-                    <hr className='my-3 border-black'/> </>
-                    : ""}
-                        
-                    {(popupInfo['LINKS'] || popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "") ? 
-                    <>
-                    <h3 className="text-title text-[18px] text-[#ad9a6d] font-semibold capitalize">{t('links')}</h3>
-                    <div className="pb-5 text-[14px] text-gray-700">
-  
-                      {
-                        (popupInfo['LINKS'] || popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "").split("\n").map((link,i) => (
-                          <a className="my-3" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
-                            <span className="underline pointer-events-none">{link}</span>
-                          </a>
-                        ))
-                      }
-  
-                    </div> 
-                    <hr className='my-3 border-black'/>
-                    </> : ""}
-  
-                  </div>
-                </div>
-            </div>    } */}
-
         </div>
       </div>
     )
 }
 
 
-const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageClick, hoverItem }) => {
-    const t = useTranslation();
-    const { language } = useLocalization();
-    const [activeEntry, setActiveEntry] = useState(null);
+const StopOverMarkers = ({ stopovers, handelClick, activeStopOver, handleImageClick, hoverItem, activeTab }) => {
+    // const t = useTranslation();
+    // const { language } = useLocalization();
+    const [activeEntry, setActiveEntry] = useState((activeTab && !activeStopOver) ? "" : {...activeStopOver});
+    // const [imgErr, setImgErr] = useState("");
+    const popupRef = useRef(null);
+
+    useEffect(() => {
+        if(popupRef.current) {
+            console.log(popupRef.current)
+            popupRef.current._update();
+            // popupRef.current = null;
+        }
+    }, [activeEntry]);
+
     // console.log(activeEntry);
     return(
       <>
@@ -1576,15 +1502,17 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageCl
 
           return <Marker 
             key={`${stopover['MAIN PLACE']}-${i}`} 
-            latitude={latitude} longitude={longitude} 
+            latitude={latitude} 
+            longitude={longitude} 
             className="cursor-pointer z-[60]" 
             anchor="top"
             style={{zIndex: hoverItem && hoverItem.id == stopover.id ? 65  : 60 }}
-            onClick={() => handelClick(stopover)}
+            
           >
             <div 
+                onClick={(e) => { e.stopPropagation(); handelClick({...stopover}); }}
                 onMouseLeave={() => setActiveEntry(null) }
-                onMouseOver={() => setActiveEntry(stopover)}
+                onMouseOver={() => { activeTab == "stopover" ? "" : setActiveEntry(stopover); }}
                 style={{ 
                     background: hoverItem && hoverItem.id == stopover.id ? 'yellow' : (bgColor ? `${bgColor}BF` : ""),
                 }}
@@ -1598,95 +1526,6 @@ const StopOVerMarkers = ({ stopovers, handelClick, activeStopOver, handleImageCl
             </div> : "" }
           </Marker>
         }) }
-        {activeEntry ? 
-          <Popup
-            latitude={activeEntry['COORDINATES'][0]} 
-            longitude={activeEntry['COORDINATES'][1]} 
-            offset={[15,15]} anchor="left" 
-            closeOnMove={false}
-            className="max-w-[300px]"
-          >
-            <Card info={{...activeEntry, category:"stopovers"}}  index={0} items={[{...activeEntry, category:"stopovers"}]} setActiveItem={() => {}}>
-                <div className="flex flex-col md:flex-col w-[300px]">
-                    <div className="w-full h-[200px] relative">
-                        <a href="#">
-                            <img className="w-full h-full object-cover"
-                                src={activeEntry['IMAGES']}
-                                alt="Sunset in the mountains" />
-                            <div
-                                className="hover:bg-gray-900 transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-transparent opacity-25">
-                            </div>
-                        </a>
-                    </div>
-                    <div className="md:w-full flex flex-col justify-center mb-5 mt-3">
-                        <div className="px-6">
-                            <a href="#"
-                                className="mt-1 font-medium text-xl inline-block hover:text-red-900 transition duration-500 ease-in-out my-2">
-                                    {language == "it" ?
-                                        `${activeEntry['ITA_MAIN PLACE']} (${activeEntry['ITA_STOPOVER']})` :
-                                        `${activeEntry['MAIN PLACE']} (${activeEntry['STOPOVER']})`
-                                    }
-                                </a>
-                           
-
-                            <div className="text-xs bg-gray-100 px-4 py-1 w-fit text-black border border-cyan-900 mb-4 ml-[-5px] rounded-2xl" 
-                                // style={{ backgroundColor:(VoyageColors[activeEntry['VOYAGE VARIANTS']] || "gray")}}
-                            >
-                                <p className='span-1'>{activeEntry['VOYAGE VARIANTS']}</p>
-                            </div>
-
-                            <p className="text-gray-500 text-sm font-bold my-1">
-                                Arrival: <span className="text-rose-900">17/03/1857</span>
-                            </p>
-                            <hr className="border-gray-300 my-2"/>
-                            <p className="text-gray-500 text-sm font-bold my-1">
-                                Departure: <span className="text-rose-900">31/03/1857</span>
-                            </p>
-                            <hr className="border-gray-300 my-2"/>
-                            <p className="text-gray-500 text-sm font-bold">
-                                Duration of stay (days): <span className="text-rose-900">15</span>
-                            </p>
-
-                        </div>
-                    </div>
-                </div>
-            </Card>
-
-            <div className="w-auto hidden">
-              <div className="flex gap-3 min-h-[100px]">
-                <div className={`relative bg-gray-300 rounded-md min-w-[90px] h-inherit overflow-hidden`}>
-                    {/* <div className="h-full bg-orange w-full object-cover" style={{ backgroundImage:`url(${activeEntry['IMAGES']})`}}></div> */}
-                  {activeEntry['IMAGES'] && <img src={activeEntry['IMAGES']} alt="" onClick={() => handleImageClick(activeEntry['IMAGES'])} className='object-fill h-full w-[90px]' />}
-                  {/* {activeEntry['IMAGES'] && <ImageViewer imageUrl={activeEntry['IMAGES']} className="object-fill h-full w-[90px]" />} */}
-                </div>
-  
-                <div className='mr-2'>
-                    <div className="fontsemibold">
-                        {language == "it" ?
-                            `${activeEntry['ITA_MAIN PLACE']} (${activeEntry['ITA_STOPOVER']})` :
-                            `${activeEntry['MAIN PLACE']} (${activeEntry['STOPOVER']})`
-                        }
-                        
-                    </div>
-
-                    <div className="icon-box shadow-md p-2 rounded-md my-2" style={{ backgroundColor:(VoyageColors[activeEntry['VOYAGE VARIANTS']] || "gray")}}>
-                        <p className='span-1'>{activeEntry['VOYAGE VARIANTS']}</p>
-                    </div>
-
-                    <div className="text-gray-400 flex">
-                        {t('date')}: {activeEntry['DEPARTURE DAY']} - {activeEntry['ARRIVAL DAY']}
-                    </div>
-
-                    <div className="px-0">
-                        {t('duration')}: {activeEntry['DURATION (days)']}
-                    </div>
-
-                  
-                </div>
-              </div>
-            </div>
-          </Popup> : ""
-        }
       </>
     )
     
@@ -1708,41 +1547,14 @@ const getMarkerIcon = (category) => {
 }
 
 
-const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem, setShowSpline }) => {
-    const [popupInfo, setPopupInfo] = useState(null);
+const Markers = ({ items, setActiveItem, setActiveTab, handleImageClick, popupInfo, setPopupInfo, hoverItem, activeItem, setShowSpline, setShowDetailTab }) => {
+    // const [popupInfo, setPopupInfo] = useState(null);
 
     const updateItem = (entry) => {
         let item = items.filter(p => p.COORDINATES).filter(p => p.COORDINATES.toString() == entry.COORDINATES.toString());
   
         setPopupInfo(item);
         setActiveItem(null);
-    }
-
-    let categoryFields = {
-        persons:[
-            {field:'LIFE DATES', label:'life dates'},
-            {field:'COUNTRY OF BIRTH', label:'country of birth'},
-
-            {field:'OCCUPATION', label:'Occupation'},
-            {field:'ENCOUNTER DATE', label:'encounter date'}
-        ],
-        scientific_specimen:[
-            {field:'CLASS', label:'class'},
-            {field:'COLLECTION PLACE', label:'Collection Place'},
-            // {field:'IUCN INDEX', label:'Indice IUCN'},
-            {field:'COLLECTION DATE', label:'Collection Date'}
-        ],
-        institutions:[
-            {field:'Place', label:'Place'},
-            {field:'Director', label:'Director'},
-            {field:'Foundation date', label:'Foundation date'}
-        ],
-        documents:[
-            {field:'FIRST AUTHOR', label:'Author'},
-            {field:'ALTERNATIVE TITLE / NAME', label:'title'},
-            {field:'YEAR  / DATE', label:'Year/Date'}
-        ]
-        
     }
 
     let colors = {
@@ -1753,21 +1565,6 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem
         "scientific_specimen":"green"
     }
 
-    const getPersonName = (info) => {
-        if(info.category == "persons") {
-            let personsName = "";
-            personsName += info['LAST NAME'] == "N. A." ? "" : info['LAST NAME'];
-            personsName += info['FIRST NAME'] == "N. A." ? "" : ", " + info['FIRST NAME'];
-
-            return personsName
-        } else {
-            return "";
-        }
-    }
-
-    
-    const t = useTranslation();
-    const { language } = useLocalization();
     
     return(
         <>
@@ -1780,65 +1577,19 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem
                     onClose={() => {setPopupInfo(null); setActiveItem(null)}}
                     className="overflow-x-hidden"
                 >
-                    <Card info={""}  index={0} items={popupInfo} setActiveItem={setActiveItem}>
+                    <Card info={""} setActiveTab={setActiveTab} setShowDetailTab={setShowDetailTab} index={0} items={popupInfo} setActiveItem={setActiveItem} setPopupInfo={setPopupInfo}>
                         {popupInfo.map((info,i) => {
                             return (
                                 <>
-                                { info.category == "persons" && <PersonCard info={info} key={i} /> }
-                                { info.category == "documents" && <DocumentCard info={info} key={i} /> }
-                                { info.category == "institutions" && <InstitutionCard info={info} key={i} /> }
-                                { info.category == "scientific_specimen" && <SpecimenCard info={info} key={i} setShowSpline={setShowSpline} setActiveItem={setActiveItem} /> }
+                                { info.category == "persons" && <PersonCard handleImageClick={handleImageClick} info={info} key={i + Math.random().toString()} /> }
+                                { info.category == "documents" && <DocumentCard handleImageClick={handleImageClick} info={info} key={i + Math.random().toString()} /> }
+                                { info.category == "institutions" && <InstitutionCard handleImageClick={handleImageClick} info={info} key={i + Math.random().toString()} /> }
+                                { info.category == "scientific_specimen" && <SpecimenCard handleImageClick={handleImageClick} info={info} key={i + Math.random().toString()} setShowSpline={setShowSpline} setActiveItem={setActiveItem} /> }
                                 </>
                             )
                         })}
                     </Card>
 
-                    {/* <Carousel items={popupInfo}>
-                        {popupInfo.map((info,i) => (
-                        <div className="popup-content min-w-full bg-red-0 relative min-w-[300px] p-0" key={i}>
-                           
-                            <div className="h-0 w-12"></div>
-                                
-                                <div className="p-3">
-
-                                    <div className="flex justify-between items-center">
-                                         <h5 className="text-[#111] text-lg font-medium capitalize">
-                                            { info.category !== "documents" ? (info['NAME'] || info['TITLE / NAME'] || getPersonName(info) || info['INSTITUTION NAME']) : ""}
-                                        </h5>
-
-                                        <span style={{ backgroundColor:colors[info.category]}} className=" flex items-center h-5 mr-5 text-[#fff] text-xs font-medium px-2.5 rounded dak:bg-gray-700 dak:text-gray-300">
-                                            {t(info['category'].split("_").join(" "))}
-                                        </span>
-                                    </div>
-                                    
-
-                                <div className="popup-content_inner">
-                                    <div className="flex gap-3">
-                                        <div className="relative bg-gray-300 rounded-md min-w-[90px] w-[90px] h-inherit overflow-hidden">
-                                            {info['FEATURED IMAGE'] && <img src={info['FEATURED IMAGE']} alt="" className='rounded-md w-[90px] object-cover h-full' onClick={() => handleImageClick(info['FEATURED IMAGE'])} />}
-                                            {info['IMAGE'] && <img src={info['IMAGE']} alt="" className='rounded-md w-full object-cover h-full' onClick={() => handleImageClick(info['IMAGE'])} />}
-                                        </div>
-                                   
-                                        <div className='flex-1'>
-                                            {
-                                            categoryFields[info.category].map(field => (<div key={field.field} className="flex flex-col">
-                                                <div className="mr-1 capitalize">{t(field.label.toLocaleLowerCase().trim()) || field.label}: </div>
-                                                <div className="font-semibold">{info[ language == "it" ? `ITA_${field.field}` : field.field] || info[field.field]}</div>
-                                            </div>))
-                                            }
-                                        </div>
-
-                                    </div>
-                                    
-
-                                    <div className="w-full flex justify-end mt-2 mb-1">
-                                        <button className="bg-[#AD9A6D] text-white px-3 py-1 rounded-md" onClick={() => setActiveItem({ info:info, table:info.category })}>More Info</button>
-                                    </div>
-                                </div>
-                                </div>
-                            </div>
-                        ))}
-                        </Carousel> */}
                     </Popup> ): ""
                 }
             {items.filter(document => document['COORDINATES'] && document['COORDINATES'].length == 2)
@@ -1848,7 +1599,7 @@ const Markers = ({ items, setActiveItem, handleImageClick, hoverItem, activeItem
                 let bgColor = colors[document.category];
                 let [latitude, longitude] = document['COORDINATES'];
                 return <Marker 
-                    key={`${document['TITLE / NAME']}-${i}`} 
+                    key={`${Math.random().toString()}-${i}`} 
                     latitude={latitude} longitude={longitude} 
                     className="cursor-pointer"
                     style={{

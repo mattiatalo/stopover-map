@@ -4,20 +4,21 @@ import { useLocalization, useTranslation } from "./LocalizationProvider";
 
 /* eslint-disable no-unused-vars */
 let colors = {
-    "stopovers":"red",
+    "stopover":"red",
     "persons":"orange",
     "documents":"#5F9EA0",
     "institutions":"grey",
     "scientific_specimen":"green"
 }
 
-const Card = ({ info, card, index, items,setActiveItem, children, autoSlideInterval=300, autoSlide=false }) => {
+const Card = ({ info, card, index, items,setActiveItem, setActiveTab, children, autoSlideInterval=300, autoSlide=false, setPopupInfo, setShowDetailTab }) => {
     const t = useTranslation();
     const [curr, setCurr] = useState(index);
 
     const goToPrev = useCallback(() => setCurr((curr) => (curr === 0 ? children?.length - 1 : curr - 1)),[children]);
     const goToNext = useCallback(() => setCurr((curr) => (curr === children?.length - 1 ? 0 : curr + 1)),[children]);
 
+    // console.log("Value", items[index]);
     useEffect(() => {
         if (!autoSlide) return
         const slideInterval = setInterval(goToNext, autoSlideInterval)
@@ -29,7 +30,20 @@ const Card = ({ info, card, index, items,setActiveItem, children, autoSlideInter
 
     useEffect(() => {
         setCurr(index);
-    }, [items, index])
+    }, [items, index]);
+
+    const handleReadMoreClick = () => { 
+        setPopupInfo(null); 
+        setActiveItem({ info:items[curr], table:items[curr].category});
+
+        // display detail tab
+        if(items[curr].category == "stopover") {
+            setShowDetailTab(true);
+        }
+        
+        // console.log()
+        setActiveTab(items[curr].category);
+    };
 
     return ( 
     <div
@@ -61,10 +75,12 @@ const Card = ({ info, card, index, items,setActiveItem, children, autoSlideInter
         </div>
 
         <div className="px-6 py-2 flex items-center justify-between bg-gray-200 w-full">
-            <span className="py-1 text-xs text-gray-900 flex items-center cursor-pointer" onClick={() => {setActiveItem({ info:items[curr], table:items[curr].category} )}}>
+            <span className="py-1 text-xs text-gray-900 flex items-center cursor-pointer" onClick={handleReadMoreClick}>
                 <span
-                    className="mr-4 bg-gray-900 px-4 py-2 text-white border border-b-slate-950 rounded-2xl font-bold">Read
-                    more</span>
+                    className="mr-4 bg-gray-900 px-4 py-2 text-white border-none border-b-slate-950 rounded-2xl font-bold"
+                >
+                    Read more
+                </span>
             </span>
 
             <span className="py-1 text-xs text-gray-900 flex items-center">
@@ -101,9 +117,10 @@ const getPersonName = (info) => {
     }
 }
 
-const PersonCard = ({ info }) => {
+const PersonCard = ({ info, handleImageClick }) => {
     const t = useTranslation();
     const {language} = useLocalization();
+    const [imgErr, setImgErr] = useState("")
 
 
     const getValue = (colName) => {
@@ -112,12 +129,16 @@ const PersonCard = ({ info }) => {
 
     return (    
         <div className="h-full min-w-[300px] w-full">
-            <div className="w-full h-[200px] relative">
+            <div className="w-full h-[200px] relative" style={{ background: (!info['IMAGE'] || imgErr) ? '#d3d3d3' : '#fff' }}>
                 <a href="#">
-                    <img className="w-full h-full object-cover"
+                    {info['IMAGE'] && <img 
+                        className={`w-full h-full object-cover ${imgErr ? 'hidden' : ""}`}
+                        onError={() => setImgErr(true)}
                         src={info['IMAGE']}
-                        alt="Sunset in the mountains" />
+                        onClick={(e) => { e.stopPropagation(); handleImageClick(info['IMAGE'])}}
+                        alt="Sunset in the mountains" /> }
                     <div
+                        onClick={(e) => { e.stopPropagation(); handleImageClick(info['IMAGE'])}}
                         className="hover:bg-gray-900 transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-transparent opacity-25">
                     </div>
                 </a>
@@ -160,6 +181,7 @@ const PersonCard = ({ info }) => {
 const DocumentCard = ({ info }) => {
     const t = useTranslation();
     const { language } = useLocalization();
+    const [imgErr, setImgErr] = useState(false);
 
     const getValue = (colName) => {
         return info[ language == "it" ? `ITA_${colName}` : colName] || info[colName];
@@ -167,11 +189,12 @@ const DocumentCard = ({ info }) => {
 
     return (
     <div className="h-full min-w-[300px] w-full">
-        <div className="w-full h-[200px] relative">
-            <a href="#">
-                <img className="w-full h-full object-cover"
+        <div className="w-full h-[200px] relative" style={{ background: (!info['IMAGE'] || imgErr) ? '#d3d3d3' : '#fff' }}>
+                <a href="#">
+                    {info['IMAGE'] && <img className={`w-full h-full object-cover ${imgErr ? 'hidden' : ""}`}
+                    onError={() => setImgErr(true)}
                     src={info['IMAGE']}
-                    alt="Sunset in the mountains" />
+                    alt="Sunset in the mountains" />}
                 <div
                     className="hover:bg-gray-900 transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-transparent opacity-25">
                 </div>
@@ -202,6 +225,7 @@ const DocumentCard = ({ info }) => {
 const SpecimenCard = ({ info, setShowSpline, setActiveItem }) => {
     const t = useTranslation();
     const { language } = useLocalization();
+    const [imgErr, setImgErr] = useState(false);
 
     const getValue = (colName) => {
         return info[ language == "it" ? `ITA_${colName}` : colName] || info[colName];
@@ -214,22 +238,26 @@ const SpecimenCard = ({ info, setShowSpline, setActiveItem }) => {
 
     return (
         <div className="h-full min-w-[300px] w-full">
-            <div className="w-full h-[200px] relative">
-                <a href="#">
-                { info['SPLINE-CODE'] && <div onClick={() => handleClick(info)} className="z-12 absolute bottom-2 right-2 w-16 h-16 bg-gray-100 border rounded-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
-                     <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                             d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73zM16.5 9.4L7.5 4.21M3.27 6.96l8.73 5.04 8.73-5.04M12 22V12" />
-                     </svg>
-                 </div> }
-
-                    <img className="w-full h-full object-cover"
+            <div className="w-full h-[200px] relative" style={{ background: (!info['IMAGE'] || imgErr) ? '#d3d3d3' : '#fff' }}>
+                <div href="#" className="h-full">
+                    {
+                        info['SPLINE-CODE'] && 
+                        <div onClick={() => setShowSpline(info['SPLINE-CODE'])} className="z-[30] cursor-pointer absolute bottom-2 right-2 w-16 h-16 bg-gray-100 border rounded-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
+                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73zM16.5 9.4L7.5 4.21M3.27 6.96l8.73 5.04 8.73-5.04M12 22V12" />
+                            </svg>
+                        </div> 
+                    }
+              
+                    {info['IMAGE'] && <img className={`w-full h-full object-cover ${imgErr ? 'hidden' : ""}`}
+                        onError={() => setImgErr(true)}
                         src={info['FEATURED IMAGE']}
-                        alt="Sunset in the mountains" />
+                        alt="Sunset in the mountains" /> }
                     <div
-                        className="hover:bg-gray-900 transition duration-300 absolute bottom-0 top-0 right-0 z-6 left-0 bg-transparent opacity-25">
+                        className="hover:bg-gray-900 transition duration-300 absolute bottom-0 top-0 right-0 z-8 left-0 bg-transparent opacity-25">
                     </div>
-                </a>
+                </div>
                    
             </div>
 
@@ -270,20 +298,21 @@ const SpecimenCard = ({ info, setShowSpline, setActiveItem }) => {
 const InstitutionCard = ({info}) => {
     const t = useTranslation();
     const { language } = useLocalization();
+    const [imgErr, setImgErr] = useState("")
 
     const getValue = (colName) => {
         return info[ language == "it" ? `ITA_${colName}` : colName] || info[colName];
     }
     return (
         <div className="h-full min-w-[300px] w-full">
-                    <div className="w-full h-[200px] relative">
-                        <a href="#">
-                            <img 
-                                className="w-full h-full object-cover bg-gray-200"
+                    <div className="w-full h-[200px] relative" style={{ background: (!info['IMAGE'] || imgErr) ? '#d3d3d3' : '#fff' }}>
+                    <a href="#">
+                            {info['IMAGE'] && <img className={`w-full h-full object-cover ${imgErr ? 'hidden' : ""}`}
+                                onError={() => setImgErr(true)}
                                 src={info['Image']}
                                 alt="Sunset in the mountains" 
                                 // onerror="this.style.display='none'; this.parentNode.style.backgroundColor='#d3d3d3';"
-                            />
+                            />}
                             <div
                                 className="hover:bg-gray-900 transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-400 opacity-25 flex items-center justify-center"> 
                             </div>

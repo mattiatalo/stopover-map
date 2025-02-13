@@ -1,8 +1,8 @@
 import * as XLSX from 'xlsx';
 
 // let data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQLR3jQJONvbl5wb5m7iN2lwbyMmC0qtVXTNptqZgkDRgbWDi9NZd661-h1wlqo0Q/pub?output=xlsx";
-// let data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS2gpvmtDGYVIKu5s_reUxVkav-Z4LLoJ85CZ8DI4UWz0uIUtZxLDIZN9hqcJtJQQQwuLDkaW9alo2O/pub?output=xlsx";
-let data_url = "/Dati_persone_istituzioni_documenti.xlsx";
+let data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS2gpvmtDGYVIKu5s_reUxVkav-Z4LLoJ85CZ8DI4UWz0uIUtZxLDIZN9hqcJtJQQQwuLDkaW9alo2O/pub?output=xlsx";
+// let data_url = "/Dati_persone_istituzioni_documenti.xlsx";
 
 export async function getData(updateDownloadProgress) {
     let arrayBuffer = await fetch(data_url)
@@ -79,7 +79,7 @@ export async function getData(updateDownloadProgress) {
     });
 
     // ["institutions", "persons", "scientific_specimen", "documents"]
-    console.log(json_data['Stopovers']);
+    // console.log(json_data['Stopovers']);
     // console.log(json_data['Scientific specimens'].filter(place => place['SPLINE-CODE']));
     return {
         persons:[...json_data['Persons']].map(entry => ({...entry, stopover:entry['MAIN ENCOUNTER PLACE'], category:'persons'})),
