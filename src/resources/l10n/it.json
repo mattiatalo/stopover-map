@@ -1,4 +1,6 @@
 {
+    "summary":"Statistiche",
+    "about":"Circa la pagina",
     "list":"Elenco",
     "timeline":"Cronologia",
     "stopovers":"Tappe",
@@ -60,12 +62,15 @@
     "Voyage stage":"Fase del viaggio",
 
     "Novara circumnavigation voyage":"Circumnavigazione", 
-    "Whole circumnavigation":"Intera circumnavigazione",
-    "Commodore Wüllerstorf-Urbair and staff in Canton":"Commodoro Wüllerstorf e ufficiali a Canton", 
-    "Novara naturalists in Macao":"Gli scienziati a Macao", 
-    "Hochstetter's New Zealand mission (8/01-2/10/1859)":"Missione di Hochstetter in Nuova Zelanda  (8/01-2/10/1859)", 
-    "Hochstetter's return journey (2/10/1859-9/01/1860)":"Viaggio di ritorno di Hochstetter (2/10/1859-9/01/1860)", 
     "Scherzer's return journey (16/05-1/08/1859)":"Viaggio di ritorno di Scherzer (16/05-1/08/1859)",
+
+    "Whole circumnavigation":"Intera circumnavigazione", 
+    "Commodore Wüllerstorf-Urbair and staff in Canton":"Commodoro Wüllerstorf e ufficiali a Canton",
+    "Novara naturalists in Macao":"Gli scienziati a Macao",
+    "Hochstetter's New Zealand mission (8/01-2/10/1859)":"Missione di Hochstetter in Nuova Zelanda (8/01-2/10/1859)",
+    "Hochstetter's return voyage (2/10/1859-9/01/1860)":"Viaggio di ritorno di Hochstetter (2/10/1859-9/01/1860)",
+    "Commodore Wüllerstorf-Urbair and Karl von Scherzer in Santiago, Chile (25/04-30/04/1859)":"Commodoro Wüllerstorf-Urbair e Karl von Scherzer a Santiago del Chile (25/04-30/04/1859)",
+    "Scherzer's return voyage (16/05-1/08/1859)":"Viaggio di ritorno di Scherzer (16/05-1/08/1859)",
 
 
     "main collection place":"Luogo di raccolta",

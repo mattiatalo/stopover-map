@@ -95,7 +95,7 @@ export const StopOverDiv = ({ popupInfo, setActiveItem, setActiveLink, category,
                         </div>
 
                         <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t("Voyage stage")}</h4>
-                        <div  style={{ backgroundColor:(VoyageColors[popupInfo['VOYAGE VARIANTS']] || "gray")}} className='p-2 rounded-md my-2 text-title'>
+                        <div  style={{ borderWidth:"3px", borderColor:(VoyageColors[popupInfo['VOYAGE VARIANTS']] || "gray")}} className='bg-gray-200 p-2 rounded-md my-2 text-title'>
                             {language == "it" ? popupInfo['ITA_VOYAGE VARIANTS'] : popupInfo['VOYAGE VARIANTS']}
                         </div> 
                         
@@ -283,7 +283,7 @@ export const DocumentsDiv = ({ popupInfo, setActiveItem, setActiveLink, category
                                 <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t('Digital version') ||'Digital version'}</h4>
                                 <h5 className="capitalize text-[1.1em] mb-3">
                                     { popupInfo['DIGITAL VERSION'] !== "N.A" ? 
-                                        <a href={popupInfo['DIGITAL VERSION']} className='underline pointer-events-none  break-words' onClick={onLinkClick}>
+                                        <a href={popupInfo['DIGITAL VERSION']} className='underline  break-words' onClick={onLinkClick}>
                                             Link 
                                         </a> : "N.A"}
                                     </h5>

@@ -26,8 +26,8 @@ export function SimpleNavbar() {
           src="/logo-comune-white.png" 
           className="ct-image w-12 h-16"
         /> */}
-        { language !== "it" ? <h3 className="text-xl mx-3 font-bold"> GeoChronicles of the Novara: <span className="font-normal">Mapping the 1857–1859 Expedition</span> </h3>
-        : <h3 className="text-xl mx-3 font-bold">Mappatura georeferenziata della spedizione della Novara <span className="font-normal"> (1857-1859)</span> </h3> }      
+        { language !== "it" ? <h3 className="md:text-xl mx-3 font-bold text-[16px] md:w-auto w-[70%]"> GeoChronicles of the Novara: <span className="font-normal">Mapping the 1857–1859 Expedition</span> </h3>
+        : <h3 className="md:text-xl mx-3 font-bold text-[16px] md:w-auto w-[70%]">Mappatura georeferenziata della spedizione della Novara <span className="font-normal"> (1857-1859)</span> </h3> }      
       </div>
       <Navbar.Toggle />
       <Navbar.Collapse>
@@ -67,9 +67,11 @@ export function SimpleNavbar() {
         <Navbar.Link href="#">Services</Navbar.Link>
         <Navbar.Link href="#">Pricing</Navbar.Link>
         <Navbar.Link href="#">Contact</Navbar.Link> */}
+
+        <LanguageDiv />
       </Navbar.Collapse>
 
-      <LanguageDiv />
+      
     </Navbar>
   );
 }

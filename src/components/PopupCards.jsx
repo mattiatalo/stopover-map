@@ -4,7 +4,7 @@ import { useLocalization, useTranslation } from "./LocalizationProvider";
 
 /* eslint-disable no-unused-vars */
 let colors = {
-    "stopover":"red",
+    "stopover":"#991b1b",
     "persons":"orange",
     "documents":"#5F9EA0",
     "institutions":"grey",
@@ -13,6 +13,7 @@ let colors = {
 
 const Card = ({ info, card, index, items,setActiveItem, setActiveTab, children, autoSlideInterval=300, autoSlide=false, setPopupInfo, setShowDetailTab }) => {
     const t = useTranslation();
+    const { language } = useLocalization();
     const [curr, setCurr] = useState(index);
 
     const goToPrev = useCallback(() => setCurr((curr) => (curr === 0 ? children?.length - 1 : curr - 1)),[children]);
@@ -58,12 +59,18 @@ const Card = ({ info, card, index, items,setActiveItem, setActiveTab, children, 
         </button>
 
         <span className="absolute z-10 top-2 mt-[3px] right-8 mr-2 text-xs text-gray-900 flex items-center">
-            <span style={{ background: colors[items[curr].category]}} className="mr-4 px-4 py-2 text-white font-bold rounded-2xl">{t(items[curr].category.split("_").join(" ") )}</span>
+            <span 
+                style={{ background: colors[items[curr].category]}} 
+                className="mr-4 px-4 py-2 text-white font-bold rounded-2xl bg-red-800"
+                // bg-red-800
+            >
+                {t(items[curr].category.split("_").join(" ") )}
+            </span>
         </span>
 
                 
         <div 
-            className="overflow-hidden relative max-w-[350px]"
+            className="overflow-hidden relative max-w-[350px] w-[300px]"
         >
             <div  
                 style={{ transform: `translateX(-${curr * 300}px)` }} 
@@ -79,11 +86,11 @@ const Card = ({ info, card, index, items,setActiveItem, setActiveTab, children, 
                 <span
                     className="mr-4 bg-gray-900 px-4 py-2 text-white border-none border-b-slate-950 rounded-2xl font-bold"
                 >
-                    Read more
+                    {language == "it" ? "Dettagli" : "Read more" }
                 </span>
             </span>
 
-            <span className="py-1 text-xs text-gray-900 flex items-center">
+            { index + 1 == items.length ? "" : <span className="py-1 text-xs text-gray-900 flex items-center">
                 <span className="flex space-x-2 mr-2">
                     <button className="p-2 bg-gray-300 rounded-full" onClick={goToPrev}>
                         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -99,7 +106,7 @@ const Card = ({ info, card, index, items,setActiveItem, setActiveTab, children, 
                     </button>
                 </span>
                 <span className="ml-1">{curr+1} / {items?.length}</span>
-            </span>
+            </span> }
         </div>
     </div>
     )
@@ -127,6 +134,7 @@ const PersonCard = ({ info, handleImageClick }) => {
         return info[ language == "it" ? `ITA_${colName}` : colName] || info[colName];
     }
 
+    // console.log(info);
     return (    
         <div className="h-full min-w-[300px] w-full">
             <div className="w-full h-[200px] relative" style={{ background: (!info['IMAGE'] || imgErr) ? '#d3d3d3' : '#fff' }}>
@@ -187,6 +195,7 @@ const DocumentCard = ({ info }) => {
         return info[ language == "it" ? `ITA_${colName}` : colName] || info[colName];
     }
 
+    // console.log(info);
     return (
     <div className="h-full min-w-[300px] w-full">
         <div className="w-full h-[200px] relative" style={{ background: (!info['IMAGE'] || imgErr) ? '#d3d3d3' : '#fff' }}>
@@ -205,12 +214,12 @@ const DocumentCard = ({ info }) => {
                 <a href="#"
                     className="mt-1 font-medium text-xl inline-block hover:text-red-900 transition duration-500 ease-in-out my-2"
                 >
-                    {getValue('FIRST AUTHOR')}
+                    {getValue("TITLE / NAME") }
                     {/* [Ludwig Christian]<br></br>Eduard von Laemmert */}
                 </a>
                 
 
-                <p className=" text-sm font-bold my-1 text-[#5F9EA0]">{getValue("TITLE / NAME")}</p>
+                <p className=" text-sm font-bold my-1 text-[#5F9EA0]">{getValue('FIRST AUTHOR')}</p>
                 <hr className="border-gray-300 my-2"/>
                 <p className="text-gray-500 text-sm font-bold my-1">
                     {t('year/date')}: <span className="text-[#5F9EA0] ">{ getValue("YEAR  / DATE") }</span>
@@ -236,13 +245,21 @@ const SpecimenCard = ({ info, setShowSpline, setActiveItem }) => {
         setShowSpline(false);
     }
 
+    const handleLoadErr = (e) => {
+        console.log(e);
+
+        setImgErr(true);
+    }
+
+    // console.log(info);
+
     return (
         <div className="h-full min-w-[300px] w-full">
             <div className="w-full h-[200px] relative" style={{ background: (!info['IMAGE'] || imgErr) ? '#d3d3d3' : '#fff' }}>
                 <div href="#" className="h-full">
                     {
                         info['SPLINE-CODE'] && 
-                        <div onClick={() => setShowSpline(info['SPLINE-CODE'])} className="z-[30] cursor-pointer absolute bottom-2 right-2 w-16 h-16 bg-gray-100 border rounded-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
+                        <div onClick={() => { console.log(info['SPLINE-CODE']); setShowSpline(info['SPLINE-CODE']) }} className="z-[30] cursor-pointer absolute bottom-2 right-2 w-16 h-16 bg-gray-100 border rounded-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
                             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                                     d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73zM16.5 9.4L7.5 4.21M3.27 6.96l8.73 5.04 8.73-5.04M12 22V12" />
@@ -250,8 +267,8 @@ const SpecimenCard = ({ info, setShowSpline, setActiveItem }) => {
                         </div> 
                     }
               
-                    {info['IMAGE'] && <img className={`w-full h-full object-cover ${imgErr ? 'hidden' : ""}`}
-                        onError={() => setImgErr(true)}
+                    {info['FEATURED IMAGE'] && <img className={`w-full h-full object-cover ${imgErr ? 'hidden' : ""}`}
+                        onError={handleLoadErr}
                         src={info['FEATURED IMAGE']}
                         alt="Sunset in the mountains" /> }
                     <div
@@ -322,7 +339,9 @@ const InstitutionCard = ({info}) => {
                     <div className="md:w-full flex flex-col justify-center mb-5 mt-3">
                         <div className="px-6">
                             <a href="#"
-                                className="mt-1 font-medium text-xl inline-block hover:text-red-900 transition duration-500 ease-in-out my-2">CASA DE CORREÇAO, RIO DE JANEIRO</a>
+                                className="mt-1 font-medium text-xl inline-block hover:text-red-900 transition duration-500 ease-in-out my-2">
+                                    {getValue('INSTITUTION NAME')}
+                                </a>
                           
                             
                             <p className="text-gray-500 text-sm font-bold my-1">

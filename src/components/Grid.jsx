@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 // Mandatory CSS required by the Data Grid
+import React from 'react';
 import 'ag-grid-community/styles/ag-grid.css';
 // Optional Theme applied to the Data Grid
 import 'ag-grid-community/styles/ag-theme-quartz.css';
@@ -32,7 +33,7 @@ const Grid = ({ data, columnNames, columnMapping, tableName, setActiveItem}) => 
         return;
     }
 
-    const colDefs = Object.keys(data[0]).filter(key => key && key !== "__EMPTY").reduce((a,b) => {
+    const colDefs = Object.keys(data[0]).filter(key => key && !["ID", 'id', "__EMPTY"].includes(key)).reduce((a,b) => {
         a.push({ 
             field:b, 
             filter: b == "FEATURED IMAGE" ? false : true, 
@@ -44,7 +45,6 @@ const Grid = ({ data, columnNames, columnMapping, tableName, setActiveItem}) => 
     }, []);
 
     const handleRowClick = (event) => {
-        console.log(event);
         setActiveItem({ info:event.data, table:tableName});
     }
 
@@ -72,4 +72,4 @@ const Grid = ({ data, columnNames, columnMapping, tableName, setActiveItem}) => 
 }
 
 
-export default Grid;
+export default React.memo(Grid);

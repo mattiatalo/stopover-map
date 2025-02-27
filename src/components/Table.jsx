@@ -29,7 +29,7 @@ export default function Table({ data, columnNames, columnMapping, setActiveItem,
                                 className="bg-white border-b da:bg-gray-800 da:border-gray-700 cursor-pointer hover:bg-gray-100" 
                                 onClick={() => setActiveItem({ table:tableName, info:entry})}
                                 onMouseOver={() => handleMouseOver(tableName, entry)}
-                                onMouseLeave={() => handleMouseLeave()}
+                                // onMouseLeave={() => handleMouseLeave()}
                             >
                                 { columnNames.map(field => (<td key={field.label} scope="col" className="px-2 py-3 text-xs">
                                         {field.columns.map(col => (entry[col] !== "N. A." ? 

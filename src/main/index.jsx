@@ -4,7 +4,7 @@ import MainLayout from './MainLayout';
 import MainMap from './MainMap';
 import { getData, loadPageIntroSections } from '../services/data';
 import CollapsibleTab from '../components/CollapsibleTab';
-import { Bird, ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp, CircleDot, File, Files, Layers, LucideGitGraph, MapPin, School, Users, X } from 'lucide-react';
+import { Bird, ChevronDown, ChevronsLeft, ChevronsRight, ChevronUp, CircleDot, File, Files,  MapPin, School, Users, X } from 'lucide-react';
 
 // import { Novara } from "./data";
 import {Route  as Novara} from "./route";
@@ -23,14 +23,16 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import Grid from '../components/Grid';
 import Modal from '../components/Modal';
 import Table from '../components/Table';
-import Carousel from '../components/Carousel';
 import { useLocalization, useTranslation } from '../components/LocalizationProvider';
 import ImageViewer from '../components/ImageViewer';
-import { RiArrowDownLine, RiArrowDownSLine, RiArrowLeftSLine, RiArrowRightSLine, RiEarthFill, RiGlobalLine } from '@remixicon/react';
+import { RiArrowDownSLine, RiArrowLeftSLine, RiArrowRightSLine } from '@remixicon/react';
 import Charts from './charts';
 import { DocumentsDiv, InstitutionDiv, PersonsDiv, StopOverDiv } from '../components/InfoDivs';
 import { Parser } from 'html-to-react';
 import { Card, DocumentCard, InstitutionCard, PersonCard, SpecimenCard } from '../components/PopupCards';
+
+import useOnClickOutside from '../components/useOutsideClick';
+import {isMobile} from 'react-device-detect';
 
 
 dayjs.extend(customParseFormat);
@@ -54,13 +56,15 @@ const sliderValuesToDates = (values) => {
     return [minDate, maxDate]
 }
 
-const voyageColorCards = {
-    "Commodore Wüllerstorf-Urbair and staff in Canton":'#95E2AA',
-    "Novara naturalists in Macao":'#E761D2',
-    "Hochstetter's New Zealand mission (8/01-2/10/1859)":"#548EB6",
-    "Hochstetter's return journey (2/10/1859-9/01/1860)" : "#7F3BC4",
-    "Scherzer's return journey (16/05-1/08/1859)":"#C49AC4"
-};
+const voyageColorCards = VoyageColors;
+// {
+//     "Whole circumnavigation":'#991b1b',
+//     "Commodore Wüllerstorf-Urbair and staff in Canton":'#95E2AA',
+//     "Novara naturalists in Macao":'#E761D2',
+//     "Hochstetter's New Zealand mission (8/01-2/10/1859)":"#548EB6",
+//     "Hochstetter's return journey (2/10/1859-9/01/1860)" : "#7F3BC4",
+//     "Scherzer's return journey (16/05-1/08/1859)":"#C49AC4"
+// };
 
 const htmlToReactParser = new Parser();
 
@@ -85,6 +89,13 @@ export default function MainPage() {
     const [ popupInfo, setPopupInfo ] = useState(null);
     const [showDetailTab, setShowDetailTab ] = useState(false);
     const [imgErr, setImgErr] = useState(false);
+
+    const [isOpen, setIsOpen] = useState(false);
+    const ref = useRef(null);
+
+    useOnClickOutside(ref, () => {
+        setIsOpen(false);
+    });
 
 
     const popupRef = useRef(null);
@@ -121,14 +132,28 @@ export default function MainPage() {
 
     const handleStopoverClick = (stopOver) => {
         // flyto the location 
+        // mapRef.current.getMap().setMinZoom(1);
+        
         if(mapRef.current) {
-            if(mapRef.current.getZoom() > 10) {
-                mapRef.current.setCenter([...stopOver['COORDINATES']].reverse());
-            } else { 
-                mapRef.current.flyTo({ center: [...stopOver['COORDINATES']].reverse(), zoom:10 });
-            }
+            // if(mapRef.current.getZoom() > 10) {
+                // mapRef.current.setCenter([...stopOver['COORDINATES']].reverse());
+            // } else { 
+                let coords = [...stopOver['COORDINATES']].reverse();
+                if(isMobile) {
+                    coords[0] += 0.1;
+                }
+                mapRef.current.flyTo({ 
+                    center: coords,
+                    zoom:10 
+                });
+            // }
           
+            //
         }
+
+        // mapRef.current.getMap().once("zoomend", () => {
+        //     mapRef.current.getMap().setMinZoom(9);
+        // });
     
         // update the stopover
         if(activeStopOver && stopOver.id == activeStopOver.id) {
@@ -144,18 +169,17 @@ export default function MainPage() {
         setActiveItem("");
         setActiveLink("");
         setLayerTabOpen(false);
+    }
 
-       
+    const handleZoomEnd = (e) => {
+        if(mapRef.current && activeStopOver) {
+            // mapRef.current.getMap().setMinZoom(9);
+        }
+    }
+
+    const closeStopoverPopup = () => {
         if(popupRef.current) {
-            console.log(popupRef.current);
-            if(!popupRef.current.isOpen()) {
-
-                console.log("Popup Ref")
-                // let latitude= stopOver['COORDINATES'][0] 
-                // let longitude= stopOver['COORDINATES'][1] 
-                // popupRef.current.setLngLat({ lat:latitude, lng:longitude});                
-                popupRef.current.addTo(mapRef.current.getMap());
-            }
+            popupRef.current.remove();
         }
     }
 
@@ -215,6 +239,13 @@ export default function MainPage() {
     const getActiveTableInfo = (tableName) => {
         // console.log(activeStopOver);
 
+        if(activeStopOver) {
+            return state.allData.filter(entry => entry.stopover)
+                .filter(entry => (entry.category == tableName && entry.stopover.toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase()))
+        } else {
+            return state.allData.filter(entry => entry.category == tableName);
+        }
+       
         switch(tableName) {
           case 'persons':
             return !activeStopOver ? state.persons : state.persons.filter(person => {
@@ -281,11 +312,21 @@ export default function MainPage() {
         setLayerTabOpen(false);
         setActiveImage(null);
         setActiveItem(null);
-    
-        mapRef.current.flyTo({
-          center:[16.45, 39.76],
-          zoom: 1.8
-        });
+        
+        // mapRef.current.getMap().setMinZoom(1);
+        // setTimeout(() => {
+            mapRef.current.flyTo({
+                center:[16.45, 39.76],
+                zoom: 1.8
+            });
+        // }, 200)
+        
+
+
+        if(popupRef.current) {
+            popupRef.current.remove();
+            popupRef.current = null;
+        }
     
     }
 
@@ -317,17 +358,24 @@ export default function MainPage() {
 
     const groupedStopOvers = targetStopOvers.reduce((a,b) => {
         let mainPlace = b['MAIN PLACE'];
-        if(a[mainPlace]) {
+        if(a[mainPlace] && !['Pola', 'MUGGIA'].includes(mainPlace)) {
             if(a[mainPlace].find(entry => entry['STOPOVER'] == b['STOPOVER'])) {
                 return a;
             }
             a[mainPlace].push(b);
         } else {
-            a[mainPlace] = [b];
+            if(['POLA', 'Muggia'].includes(b['STOPOVER'])) {
+                a[`${mainPlace}-${b.id}`] = [b];
+            } else{
+                a[mainPlace] = [b];
+            }
+           
         }
 
         return a;
     }, {});
+
+    // console.log(groupedStopOvers);
 
     const getCategoryColor = (category) => {
         let colors = {
@@ -365,8 +413,17 @@ export default function MainPage() {
 
 
     const tabClassName = `tab flex items-center px-1 font-semibold text-xs cursor-pointer hover:bg-gray-400 hover:text-white py-1`;
-    
+    const itemListing = useMemo(() => {
+        if(activeStopOver) {
+            console.log("Filtering")
+            return allData.filter(entry => activeLayers.includes(entry.category)).filter(entry => entry.stopover == activeStopOver['MAIN PLACE'])
+        } 
+        return [];
+    }, [activeStopOver, allData, activeLayers]);
     // close and open panels
+
+
+    // console.log([...new Set(state.stopovers.map(stopover => stopover['ITA_VOYAGE VARIANTS']))]);
     return (
         <MainLayout>
             { isDataLoading && <div className='absolute z-[100] top-0 left-0 w-full bg-black/80 h-full flex items-center justify-center'>
@@ -388,7 +445,7 @@ export default function MainPage() {
             <div className="map-container relative flex w-full">
            
 
-             <nav className="flex w-full absolute top-0 left-0 z-[60] bg-white items-center justify-center" aria-label="Breadcrumb">
+             <nav className="flex w-full absolute top-0 left-0 z-[68] bg-white items-center justify-center" aria-label="Breadcrumb">
                  <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse p-2">
                         <li className="inline-flex items-center">
                             <div href="#" onClick={resetMap} className="bg-gray-100 py-1 px-4 rounded-3xl cursor-pointer inline-flex items-center text-sm font-medium text-gray-700">
@@ -398,7 +455,7 @@ export default function MainPage() {
                             </div>
                         </li>
                         { activeStopOver ?
-                        <li>
+                        <li className='hidden md:block'>
                             <div className="flex items-center relative">
                                 <svg className="rtl:rotate-180 w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
@@ -465,14 +522,18 @@ export default function MainPage() {
                 </nav> 
 
                 <div className="w-full">
-                    <MainMap projection={"globe"} basemap={"daks"} ref={mapRef}>
+                    <MainMap projection={"globe"} basemap={"daks"} ref={mapRef} minZoom={1}>
                         {state.stopovers.length && <StopOverMarkers 
                             hoverItem={hoverStopover} 
                             stopovers={state.stopovers} 
                             handleImageClick={setActiveImage} 
-                            handelClick={handleStopoverClick} 
+                            handleClick={handleStopoverClick} 
                             activeTab={activeTab}
+                            setActiveTab={setActiveTab}
                             activeStopOver={activeStopOver}
+                            showDetailTab={showDetailTab}
+                            setShowDetailTab={setShowDetailTab}
+                            mapRef={mapRef}
                         />}
 
                         <Source type="geojson" data={Novara}>
@@ -482,92 +543,38 @@ export default function MainPage() {
                         { activeStopOver  ? <Markers 
                             handleImageClick={setActiveImage}
                             setShowDetailTab={setShowDetailTab}
-                            hoverItem={hoverItem}
+                            // hoverItem={hoverItem}
+                            hoverItem={null}
                             activeItem={activeItem}
                             popupInfo={popupInfo}
                             setPopupInfo={setPopupInfo}
                             setShowSpline={setShowSpline}
-                            items={allData.filter(entry => activeLayers.includes(entry.category)).filter(entry => entry.stopover == activeStopOver['MAIN PLACE'])} 
+                            closeStopoverPopup={closeStopoverPopup}
+                            items={itemListing} 
                             setActiveItem={setActiveItem} 
                             setActiveTab={setActiveTab}
                         /> : "" }
 
-                        {(!showDetailTab && activeStopOver) ? 
-                                <Popup
-                                    latitude={activeStopOver['COORDINATES'][0]} 
-                                    longitude={activeStopOver['COORDINATES'][1]} 
-                                    offset={[15,15]} anchor="left" 
-                                    // closeOnMove={false}
-                                    // onClose={() => popupRef.current == null}
-                                    // closeOnClick={true}
-                                    ref={popupRef}
-                                    className="px-0 max-w-[300px] py-0 rounded-[1.2rem]"
-                                >
-                                    <Card setPopupInfo={() => {}} setActiveTab={setActiveTab} setShowDetailTab={setShowDetailTab} info={{...activeStopOver, category:"stopover"}}  index={0} items={[{...activeStopOver, category:"stopover"}]} setActiveItem={() => {}}>
-                                        <div className="flex flex-col md:flex-col w-[300px]">
-                                            <div className="w-full h-[200px] relative" style={{ background: (!activeStopOver['IMAGES'] || imgErr) ? '#000' : '#fff' }}>
-                                                <a href="#">
-                                                    {activeStopOver['IMAGES'] && <img className="w-full h-full object-cover"
-                                                        src={activeStopOver['IMAGES']}
-                                                        onError={() => setImgErr(true)}
-                                                        alt="Sunset in the mountains" /> }
-                                                    <div
-                                                        onClick={(e) => { e.stopPropagation(); setActiveImage(activeStopOver['IMAGES'])}}
-                                                        className="hover:bg-gray-900 transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-transparent opacity-25">
-                                                    </div>
-                                                </a>
-                                            </div>
-                                            <div className="md:w-full flex flex-col justify-center mb-5 mt-3">
-                                                <div className="px-6">
-                                                    <a href="#"
-                                                        className="mt-1 font-medium text-xl inline-block hover:text-red-900 transition duration-500 ease-in-out my-2">
-                                                            {language == "it" ?
-                                                                `${activeStopOver['ITA_MAIN PLACE']} (${activeStopOver['ITA_STOPOVER']})` :
-                                                                `${activeStopOver['MAIN PLACE']} (${activeStopOver['STOPOVER']})`
-                                                            }
-                                                        </a>
-                                                
-
-                                                    <div className="text-xs bg-gray-100 px-4 py-1 w-fit text-black border border-cyan-900 mb-4 ml-[-5px] rounded-2xl" 
-                                                        // style={{ backgroundColor:(VoyageColors[activeStopOver['VOYAGE VARIANTS']] || "gray")}}
-                                                    >
-                                                        <p className='span-1'>{activeStopOver['VOYAGE VARIANTS']}</p>
-                                                    </div>
-
-                                                    <p className="text-gray-500 text-sm font-bold my-1">
-                                                        Arrival: <span className="text-rose-900">17/03/1857</span>
-                                                    </p>
-                                                    <hr className="border-gray-300 my-2"/>
-                                                    <p className="text-gray-500 text-sm font-bold my-1">
-                                                        Departure: <span className="text-rose-900">31/03/1857</span>
-                                                    </p>
-                                                    <hr className="border-gray-300 my-2"/>
-                                                    <p className="text-gray-500 text-sm font-bold">
-                                                        Duration of stay (days): <span className="text-rose-900">15</span>
-                                                    </p>
-
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                    
-                                </Popup> : ""}
+                       
                     </MainMap>
                 </div>
 
                 <CollapsibleTab
                     position="top-right"
+                    tooltipTitle={t("about")}
                     collapseIcon={<ChevronsLeft className="text-gray-100" />}
-                    collapseClass="about-tab overflow-hidden absolute z-20 right-6 top-16 bg-white w-[240px] h-[400px] rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]"
+                    collapseClass="hidden md:block about-tab absolute z-20 right-6 top-16 bg-white w-[450px] h-[400px] overflow-y-auto rounded-[10px] shadow-round border-[0px] border-[#AD9A6D]"
                 >
-                    <div className="about-section bg-white text-black p-[20px] h-full overflow-y-auto">
+                    <div className="about-section bg-white text-black p-[20px] h-full overflow-y-auto mt-5">
                         {state.pageIntroInfo ? htmlToReactParser.parse(state.pageIntroInfo[language]) : ""}                        
                     </div>
                 </CollapsibleTab>
                 
                 <CollapsibleTab
                     collapseIcon={<MapPin className="text-gray-100 "/>}
-                    collapseClass="absolute w-96 bg-white left-6 top-16 z-20 rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]"
+                    position="top-left"
+                    tooltipTitle={t("stopovers")}
+                    collapseClass="absolute w-96 bg-white left-2 md:left-6 top-20 md:top-16 z-20 rounded-[10px] shadow-round border-[4px] border-[#AD9A6D]"
                 >
                     <div className='w-full bg-white left-6 top-16 overflow-hidden rounded-[10px]'>
 
@@ -609,12 +616,52 @@ export default function MainPage() {
 
                                 <div className="p-4 py-2">
                                     <h5 className=''>{t('voyage_label')}</h5>
+                                    
+                                    <div className="w-full relative" ref={ref}>
+                                        <button 
+                                            id="dropdownDividerButton" 
+                                            onClick={() => setIsOpen(!isOpen)}
+                                            data-dropdown-toggle="dropdownDivider" 
+                                            className="h-[42px] overflow-hidden relative bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full" type="button">
+                                                <p className='w-full px-3 m-0 text-left'>
+                                                    {activeVoyage ? t(activeVoyage).slice(0,42) : t('all_voyages')}
+                                                </p>
+                                                
+                                                <svg className="w-2.5 h-2.5 ms-3 absolute top-4 right-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4"/>
+                                                </svg>
+                                        </button>
+
+                                        { isOpen && <div className="options bg-white z-10 shadow-md my-3 pt-1 absolute left-0 top-8">
+                                            {(voyages.map((voyage, i) => (<div 
+                                                key={i} value={voyage}
+                                                onClick={() => { setState({...state, activeVoyage:voyage}); setIsOpen(false); }}
+                                                className='flex items-center text-sm border-b border-[#ddd] p-1 hover:bg-gray-100 cursor-pointer'
+                                            >
+                                                <div 
+                                                    className=" !h-4 !w-4 rounded-full mr-2" 
+                                                    style={{ background:(voyageColorCards[voyage] || "#ff0000")}} 
+                                                >
+                                                </div>
+
+                                                <div className='flex-1'>
+                                                    <span className='mx-1'>
+                                                        {t(voyage) || voyage}
+                                                    </span>
+                                                </div>
+                                               
+                                               
+                                            </div>) ))}
+                                        </div> }
+                                    </div>
+                                   
+
                                     <select name="voyage" id="voyage"
                                         defaultValue={""}
                                         onChange={(e) => {
                                             setState({...state, activeVoyage:e.target.value});
                                         }}
-                                        className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
+                                        className='hidden bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dak:bg-gray-700 dak:border-gray-600 dak:placeholder-gray-400 dak:text-white dak:focus:ring-blue-500 dak:focus:border-blue-500'
                                     >
                                         <option value="" >{t('all_voyages')}</option>
                                         {(voyages.map((voyage, i) => (<option 
@@ -745,6 +792,7 @@ export default function MainPage() {
             
                 <CollapsibleTab
                     collapseIcon={<ChevronsRight className="text-gray-500"/>}
+                    
                     collapseClass="layer-cards absolute z-20 left-0 right-0 mx-auto w-[500px] bottom-0 min-w-[40px] min-h-[40px] hidden"
                 >
                     <div className="flex space-x-2 py-3 flex px-3 bg-white/40 rounded-t-[5px] shadow-round">
@@ -796,7 +844,8 @@ export default function MainPage() {
                                     />
                                     :
                                     <Grid 
-                                        data={state[activeTable]} 
+                                        // data={state[activeTable]} 
+                                        data={getActiveTableInfo(activeTable)}
                                         columnNames={[]} 
                                         columnMapping={{}}
                                         tableName={activeTable} 
@@ -815,8 +864,9 @@ export default function MainPage() {
 
                 <CollapsibleTab
                     position="bottom-left"
+                    tooltipTitle={t("summary")}
                     collapseIcon={<ChevronsRight className="text-gray-500"/>}
-                    collapseClass="summary-cards absolute z-20 left-6 bottom-4  min-w-[40px] min-h-[40px]"
+                    collapseClass="summary-cards absolute z-20 left-6 bottom-4  min-w-[40px] min-h-[40px] hidden md:block"
                 >
                     <div className="space-x-0 py-2 flex px-3 bg-white rounded-[25px] shadow-round pl-[20px]">
                     <div className="tab flex items-center px-1 cursor-pointer ml-8" onClick={() => {setIsSummaryClick(true); setActiveTable('scientific_specimen');}}>
@@ -911,7 +961,7 @@ export default function MainPage() {
                         setShowSpline={setShowSpline}
                     />  }
 
-                { ( showSpline && activeItem && activeItem.table == "scientific_specimen")  ? <SpecimenSplineModal activeItem={activeItem} spline={showSpline} setShowSpline={setShowSpline} /> : "" }
+                { ( showSpline )  ? <SpecimenSplineModal activeItem={activeItem} spline={showSpline} setShowSpline={setShowSpline} /> : "" }
             </div>
 
             {/* {activeLink ? <Modal activeTab={activeTab} isOpen={true} toggleActiveTable={setActiveLink}>
@@ -927,7 +977,7 @@ const Accordion = ({title, children}) => {
 
     return(
         <div className='accordion w-full'>
-            <button className='w-full flex justify-between bg-gray-0 p-2 rounded-md  relative ml-6 w-[calc(100%-1.5rem)]' onClick={() => setIsOpen(!isOpen)}>
+            <button className='w-full flex justify-between bg-gray-0 p-2 rounded-md  relative ml-6 w-[calc(100%-2rem)]' onClick={() => setIsOpen(!isOpen)}>
                 {title}
                 { isOpen ? <ChevronDown /> : <ChevronUp /> }
 
@@ -950,12 +1000,12 @@ const StopOverCard = ({stopOver, onClick, activeStopOver, setHoverStopover, hove
     return (
         <li 
             style={{
-                background:(hoverStopover && stopOver.id == hoverStopover.id) ? "#d3d3d380" : ("#fff")
+                // background:(hoverStopover && stopOver.id == hoverStopover.id) ? "#d3d3d380" : ("#fff")
             }}
-            className="w-full flex px-4 text-xs rounded-t-lg items-center cursor-pointer"
+            className="w-full flex px-4 text-xs rounded-t-lg items-center cursor-pointer hover:bg-[#d3d3d380]"
             onClick={onClick}
-            onMouseOver={() => setHoverStopover(stopOver)}
-            onMouseLeave={() => setHoverStopover("")}
+            // onMouseOver={() => setHoverStopover(stopOver)}
+            // onMouseLeave={() => setHoverStopover("")}
         >
             <div className="flex items-center flex-col relative h-full py-3">
                 <div 
@@ -990,17 +1040,16 @@ const DetailTab = ({ setActiveTab, setShowDetailTab, data, activeTab, setActiveI
     const t = useTranslation();
 
     let colors = {
-        "stopover":"red",
+        "stopover":"#991b1b",
         "persons":"orange",
         "documents":"#5f9ea0",
         "institutions":"grey",
         "scientific_specimen":"green"
     }
     
-    console.log(activeTab);
 
     return (
-        <div className="absolute z-[65] bg-[#F1F0EE] bg-white w-[450px] right-[20px] h-[calc(100vh-180px)] top-16 rounded-xl shadow-lg border-[3px] border-[#AD9A6D] overflow-hidden">
+        <div className="absolute z-[65] bg-[#F1F0EE] bg-white w-[90%] md:w-[450px] right-[20px] h-[calc(100vh-210px)] md:h-[calc(100vh-180px)] md:top-16 top-20 rounded-xl shadow-lg border-[3px] border-[#AD9A6D] overflow-hidden">
             <div className="max-h-full h-full text-[#54595f] overflow-y-auto overflow-x-hidden bg-[#F8F1E5] ">
                 
                 <div className="flex items-center w-full bg-white">
@@ -1080,9 +1129,9 @@ const DetailTab = ({ setActiveTab, setShowDetailTab, data, activeTab, setActiveI
 }
 
 const SpecimenSplineModal = ({ activeItem, setShowSpline, spline }) => {
-    console.log(splint);
+    // console.log(spline);
     return(
-      <Modal activeTab={activeItem.info['NAME']} toggleActiveTable={() => setShowSpline("")} isOpen={true}>
+      <Modal activeTab={"specimens"} toggleActiveTable={() => setShowSpline("")} isOpen={true}>
         <iframe 
             className="spline-canvas h-[80%] my-auto" src={`https://my.spline.design/${spline}`} width="100%" frameBorder="0"></iframe>
       </Modal>
@@ -1111,7 +1160,7 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
     return (
         <div 
             style={{ boxShadow:"0 -1px 20px 0 #ad9a6d"}} 
-            className=" z-50 bg-[#f1f0ee] w-[450px] right-5 h-full detail-modal"
+            className=" z-[45] bg-[#f1f0ee] md:w-[450px] w-full right-5 h-full detail-modal"
         >
             <div className="flex flex-col w-full p-[30px] max-h-full text-[#54595f] overflow-y-auto overflow-x-hidden ">
                 {/* <button 
@@ -1162,17 +1211,21 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 
                     </h2>
 
-                    <div className="px-0 relative image-div px-0 h-auto w-full">
+                    <div className="px-0 relative image-div px-0 h-auto w-full min-h-16 bg-gray-200">
                         {/* <img src={popupInfo['FEATURED IMAGE']} className="w-full"/> */}
                         <ImageViewer imageUrl={popupInfo['FEATURED IMAGE']} className="w-full" showImage={true} onClose={console.log} cnName="w-full" />
 
                         { 
                             popupInfo['SPLINE-CODE']  && 
-                            <button className="absolute right-4 bottom-4 bg-[#fff] rounded-md capitalize rounded-md p-0 w-16 h-16 z-12" onClick={() => setShowSpline(popupInfo['SPLINE-CODE'])}>
-                                <img src="/3d_image.jpg" alt="" className='h-10 w-auto rounded-md' />
+                            <button className="absolute right-4 bottom-4 bg-[#fff] rounded-md capitalize rounded-md p-0 w-12 h-12 z-[70] flex items-center justify-center" onClick={() => setShowSpline(popupInfo['SPLINE-CODE'])}>
+                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73zM16.5 9.4L7.5 4.21M3.27 6.96l8.73 5.04 8.73-5.04M12 22V12" />
+                                </svg>
                             </button>
                         }
 
+                        {/* { popupInfo['SPLINE-CODE']} */}
                     </div>
 
                     <div className="font-semibold">
@@ -1226,7 +1279,7 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
                                 return (
                                     <div key={`${field}-${i}`} className="flex flex-col justify-between text-lg border-b border-[#ad9a6d] gap-2 items-start pt-2 text-sm w-full">
                                         <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t(field) || t(field.toLocaleLowerCase().split(" ").join("_"))}</h4>
-                                        <h5 className="capitalize text-[1.1em] mb-3">{popupInfo[colName] || popupInfo[field.toLocaleUpperCase()]}</h5>
+                                        <h5 className="text-[1.1em] mb-3">{popupInfo[colName] || popupInfo[field.toLocaleUpperCase()]}</h5>
                                     </div>
                                 )
                             })
@@ -1236,7 +1289,7 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 
                         <div className="flex flex-col text-lg gap-2 items-start py-2 text-sm w-full">
                             <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('owner')}</h4>
-                            <h5 className="capitalize text-[1.1em]">{popupInfo["OWNER"]}</h5>
+                            <h5 className="text-[1.1em]">{popupInfo["OWNER"]}</h5>
                         </div>
                     </div>                    
 
@@ -1315,12 +1368,17 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 }
 
 const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, isSpecimen, setShowSpline }) => {
-    console.log(activeItem);
-    console.log(items);
-    let item = [...items].find(entry => entry.ID == activeItem.info.ID);
-    console.log(item);
-    let itemIndex = [...items].findIndex(entry => entry.ID == activeItem.info.ID);
+    // console.log(activeItem);
+    // console.log(items);
+    // let item = [...items].find(entry => entry.id == activeItem.info.id);
+    // console.log(item);
+    let itemIndex = [...items].findIndex(entry => entry.id == activeItem.info.id);
+    // console.log(itemIndex);
     const [currentIndex, setCurrentIndex] = useState(itemIndex);
+
+    useEffect(() => {
+        setCurrentIndex(itemIndex);
+    }, [activeItem,itemIndex, setCurrentIndex])
 
     const nextIndex = () => {
         if(currentIndex < items.length - 1) {
@@ -1347,14 +1405,14 @@ const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, 
         return (<div>Item Not Found</div>);
     }
 
-    console.log(itemIndex);
+    // console.log(itemIndex, currentIndex);
 
     return (
         <div 
             style={{
                 boxShadow: '0 -1px 20px 0 #ad9a6d'
             }}
-            className='active-item absolute right-0 top-[130px] h-[calc(80vh-100px)] border-[2px] border-[#000000] z-[80] right-5 rounded-xl overflow-hidden'
+            className='active-item absolute right-0 top-[130px] h-[calc(80vh-100px)] w-[90%] md:w-auto border-[2px] border-[#000000] z-[74] right-5 rounded-xl overflow-hidden'
         >
             {/* <Carousel items={items} currentIndex={currentIndex}> */}
 
@@ -1416,7 +1474,7 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
     return (
         <div 
             style={{boxShadow:  !isStopOver? "0 -1px 20px 0 #ad9a6d" : "" }}
-            className={`detail-modal ${ !isStopOver ? 'overflow-y-auto h-full w-[445px] rounded' : ''} bg-[#f1f0ee] `}
+            className={`detail-modal ${ !isStopOver ? 'overflow-y-auto h-full md:w-[445px] w-[100%] rounded' : ''} bg-[#f1f0ee] `}
         >
             <div className={`flex flex-col w-full px-[30px] py-[30px] max-h-full ${ !isStopOver ? 'space-x-0' : ''} text-[#54595f] overflow-y-auto overflow-x-hidden`}>
 
@@ -1477,20 +1535,27 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
 }
 
 
-const StopOverMarkers = ({ stopovers, handelClick, activeStopOver, handleImageClick, hoverItem, activeTab }) => {
-    // const t = useTranslation();
-    // const { language } = useLocalization();
+const StopOverMarkers = ({ mapRef, setShowDetailTab, showDetailTab, stopovers, handleClick, activeStopOver, setActiveTab, handleImageClick, hoverItem, activeTab }) => {
+    const t = useTranslation();
+    const { language } = useLocalization();
     const [activeEntry, setActiveEntry] = useState((activeTab && !activeStopOver) ? "" : {...activeStopOver});
-    // const [imgErr, setImgErr] = useState("");
+    const [imgErr, setImgErr] = useState("");
     const popupRef = useRef(null);
+    // const map = 
+
+    // console.log(showDetailTab, activeTab);
 
     useEffect(() => {
-        if(popupRef.current) {
-            console.log(popupRef.current)
-            popupRef.current._update();
+        if(popupRef.current && !showDetailTab) {            
+            popupRef.current.addTo(mapRef.current.getMap());
             // popupRef.current = null;
         }
-    }, [activeEntry]);
+    }, [activeStopOver, showDetailTab, mapRef]);
+
+    const handelMarkerClick = (e, stopOver) => {
+        e.stopPropagation();
+        handleClick({...stopOver});
+    }
 
     // console.log(activeEntry);
     return(
@@ -1498,7 +1563,7 @@ const StopOverMarkers = ({ stopovers, handelClick, activeStopOver, handleImageCl
         {stopovers.map((stopover,i) => {
           let [latitude, longitude] = stopover['COORDINATES'];
         //   console.log(latitude, longitude, stopover['STOPOVER']);
-            let bgColor = voyageColorCards[stopover['VOYAGE VARIANTS']];
+            let bgColor = voyageColorCards[stopover['VOYAGE VARIANTS']] + "bf";
 
           return <Marker 
             key={`${stopover['MAIN PLACE']}-${i}`} 
@@ -1506,30 +1571,110 @@ const StopOverMarkers = ({ stopovers, handelClick, activeStopOver, handleImageCl
             longitude={longitude} 
             className="cursor-pointer z-[60]" 
             anchor="top"
-            style={{zIndex: hoverItem && hoverItem.id == stopover.id ? 65  : 60 }}
+            // style={{zIndex: hoverItem && hoverItem.id == stopover.id ? 65  : 60 }}
             
           >
             <div 
-                onClick={(e) => { e.stopPropagation(); handelClick({...stopover}); }}
+                onClick={(e) => handelMarkerClick(e, stopover)}
                 onMouseLeave={() => setActiveEntry(null) }
                 onMouseOver={() => { activeTab == "stopover" ? "" : setActiveEntry(stopover); }}
                 style={{ 
-                    background: hoverItem && hoverItem.id == stopover.id ? 'yellow' : (bgColor ? `${bgColor}BF` : ""),
+                    background: hoverItem && hoverItem.id == stopover.id ? 'yellow' : (bgColor ? `${bgColor}` : ""),
                 }}
                 className={`rounded-full ${ bgColor ? `bg-[${bgColor}]` : 'bg-red-500/75'} flex shadow-round p-[1px] align-center justify-center stopver-marker border-[1px] border-[#555]`}
             >
               <CircleDot size={10} className='bg-red-500/0 'opacity={0}/>
             </div>
 
-            { (activeStopOver && activeStopOver['STOPOVER'] == stopover['STOPOVER']) ? <div className="radialRingWrapper z-[-1]" onClick={() => handelClick(stopover)}>
+            { (activeStopOver && activeStopOver['STOPOVER'] == stopover['STOPOVER']) ? <div className="radialRingWrapper z-[-1] pointer-events-none" onClick={() => handleClick(stopover)}>
                 <div className="radialRing"></div>
             </div> : "" }
           </Marker>
         }) }
+
+        {(!showDetailTab && activeStopOver) && 
+                            <Popup
+                            longitude={activeStopOver['COORDINATES'][1]}
+                            latitude={activeStopOver['COORDINATES'][0]}
+                            offset={[25,-15]}
+                            anchor="left"
+                            ref={popupRef}
+                            onClose={() => console.log("Close")}
+                            className="overflow-x-hidden stopover-content"
+                        >
+                                {/* <Popup
+                                    latitude={activeStopOver['COORDINATES'][0]} 
+                                    longitude={activeStopOver['COORDINATES'][1]} 
+                                    offset={[15,15]} 
+                                    anchor="left" 
+                                    // closeOnMove={false}
+                                    onClose={() => console.log("Close")}
+                                    // closeOnClick={false}
+                                    ref={popupRef}
+                                    className="px-0 max-w-[300px] py-0 rounded-[1.2rem] stopover-content opacity-full"
+                                > */}
+                                    <Card setPopupInfo={() => {}} setActiveTab={setActiveTab} setShowDetailTab={setShowDetailTab} info={{...activeStopOver, category:"stopover"}}  index={0} items={[{...activeStopOver, category:"stopover"}]} setActiveItem={() => {}}>
+                                        <div className="flex flex-col md:flex-col w-[300px]">
+                                            <div className="w-full h-[200px] relative" style={{ background: (!activeStopOver['IMAGES'] || imgErr) ? '#000' : '#fff' }}>
+                                                <a href="#">
+                                                    {activeStopOver['IMAGES'] && <img className="w-full h-full object-cover"
+                                                        src={activeStopOver['IMAGES']}
+                                                        onError={() => setImgErr(true)}
+                                                        alt="Sunset in the mountains" /> }
+                                                    <div
+                                                        onClick={(e) => { e.stopPropagation(); handleImageClick(activeStopOver['IMAGES'])}}
+                                                        className="hover:bg-gray-900 transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-transparent opacity-25">
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div className="md:w-full flex flex-col justify-center mb-5 mt-3">
+                                                <div className="px-6">
+                                                    <a href="#"
+                                                        className="mt-1 font-medium text-xl inline-block hover:text-red-900 transition duration-500 ease-in-out my-2">
+                                                            {language == "it" ?
+                                                                `${activeStopOver['ITA_MAIN PLACE']} (${activeStopOver['ITA_STOPOVER']})` :
+                                                                `${activeStopOver['MAIN PLACE']} (${activeStopOver['STOPOVER']})`
+                                                            }
+                                                        </a>
+                                                
+
+                                                    <div 
+                                                    style={{ bordColor:voyageColorCards[activeStopOver['VOYAGE VARIANTS']]}}
+                                                    className="text-xs bg-gray-200 px-4 py-1 w-fit text-black border border-cyan-900 mb-4 ml-[-5px] rounded-2xl" 
+                                                        // style={{ backgroundColor:(VoyageColors[activeStopOver['VOYAGE VARIANTS']] || "gray")}}
+                                                    >
+                                                        <p className='span-1'>{t(activeStopOver['VOYAGE VARIANTS'])}</p>
+                                                    </div>
+
+                                                    <p className="text-gray-500 text-sm font-bold my-1">
+                                                        {t('arrival day')}: <span className="text-rose-900">
+                                                        {language == "it" ? (activeStopOver[`ITA_ARRIVAL DAY`] || activeStopOver["ARRIVAL DAY"]) : activeStopOver['ARRIVAL DAY'] || "N.A"}
+                                                        </span>
+                                                    </p>
+                                                    <hr className="border-gray-300 my-2"/>
+                                                    <p className="text-gray-500 text-sm font-bold my-1">
+                                                        {t('departure day')}: <span className="text-rose-900">
+                                                            {language == "it" ? (activeStopOver[`ITA_DEPARTURE DAY`] || activeStopOver['DEPARTURE DAY']) : activeStopOver['DEPARTURE DAY'] || "N.A"}
+                                                        </span>
+                                                    </p>
+                                                    <hr className="border-gray-300 my-2"/>
+                                                    <p className="text-gray-500 text-sm font-bold">
+                                                        {t('duration')}: <span className="text-rose-900">{activeStopOver[`DURATION (days)`]}</span>
+                                                        {/* Duration of stay (days) */}
+                                                    </p>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                    
+                                </Popup>}
       </>
     )
     
 }
+
+
 
 const getMarkerIcon = (category) => {
     switch(category) {
@@ -1547,7 +1692,7 @@ const getMarkerIcon = (category) => {
 }
 
 
-const Markers = ({ items, setActiveItem, setActiveTab, handleImageClick, popupInfo, setPopupInfo, hoverItem, activeItem, setShowSpline, setShowDetailTab }) => {
+const Markers = ({ closeStopoverPopup,  items, setActiveItem, setActiveTab, handleImageClick, popupInfo, setPopupInfo, hoverItem, activeItem, setShowSpline, setShowDetailTab }) => {
     // const [popupInfo, setPopupInfo] = useState(null);
 
     const updateItem = (entry) => {
@@ -1555,6 +1700,7 @@ const Markers = ({ items, setActiveItem, setActiveTab, handleImageClick, popupIn
   
         setPopupInfo(item);
         setActiveItem(null);
+        closeStopoverPopup()
     }
 
     let colors = {
@@ -1580,12 +1726,12 @@ const Markers = ({ items, setActiveItem, setActiveTab, handleImageClick, popupIn
                     <Card info={""} setActiveTab={setActiveTab} setShowDetailTab={setShowDetailTab} index={0} items={popupInfo} setActiveItem={setActiveItem} setPopupInfo={setPopupInfo}>
                         {popupInfo.map((info,i) => {
                             return (
-                                <>
+                                <div className='w-full h-full' key={i + Math.random().toString()}>
                                 { info.category == "persons" && <PersonCard handleImageClick={handleImageClick} info={info} key={i + Math.random().toString()} /> }
                                 { info.category == "documents" && <DocumentCard handleImageClick={handleImageClick} info={info} key={i + Math.random().toString()} /> }
                                 { info.category == "institutions" && <InstitutionCard handleImageClick={handleImageClick} info={info} key={i + Math.random().toString()} /> }
                                 { info.category == "scientific_specimen" && <SpecimenCard handleImageClick={handleImageClick} info={info} key={i + Math.random().toString()} setShowSpline={setShowSpline} setActiveItem={setActiveItem} /> }
-                                </>
+                                </div>
                             )
                         })}
                     </Card>
@@ -1603,7 +1749,7 @@ const Markers = ({ items, setActiveItem, setActiveTab, handleImageClick, popupIn
                     latitude={latitude} longitude={longitude} 
                     className="cursor-pointer"
                     style={{
-                        zIndex: hoverItem && hoverItem.id == document.id ? 40 : (activeItem && activeItem.info && activeItem.info.id == document.id) ? 40 : "", 
+                        // zIndex: hoverItem && hoverItem.id == document.id ? 40 : (activeItem && activeItem.info && activeItem.info.id == document.id) ? 40 : "", 
                     }}
                     onClick={(e) => {
                         e.originalEvent.stopPropagation();
@@ -1645,3 +1791,63 @@ const dataLayer =  {
 
 
 //   MODAL links to iframes
+// {(!showDetailTab && activeStopOver) && 
+//     <Popup
+//         latitude={activeStopOver['COORDINATES'][0]} 
+//         longitude={activeStopOver['COORDINATES'][1]} 
+//         offset={[15,15]} anchor="left" 
+//         closeOnMove={false}
+//         onClose={() => console.log("Close")}
+//         // closeOnClick={false}
+//         ref={popupRef}
+//         className="px-0 max-w-[300px] py-0 rounded-[1.2rem]"
+//     >
+//         <Card setPopupInfo={() => {}} setActiveTab={setActiveTab} setShowDetailTab={setShowDetailTab} info={{...activeStopOver, category:"stopover"}}  index={0} items={[{...activeStopOver, category:"stopover"}]} setActiveItem={() => {}}>
+//             <div className="flex flex-col md:flex-col w-[300px]">
+//                 <div className="w-full h-[200px] relative" style={{ background: (!activeStopOver['IMAGES'] || imgErr) ? '#000' : '#fff' }}>
+//                     <a href="#">
+//                         {activeStopOver['IMAGES'] && <img className="w-full h-full object-cover"
+//                             src={activeStopOver['IMAGES']}
+//                             onError={() => setImgErr(true)}
+//                             alt="Sunset in the mountains" /> }
+//                         <div
+//                             onClick={(e) => { e.stopPropagation(); setActiveImage(activeStopOver['IMAGES'])}}
+//                             className="hover:bg-gray-900 transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-transparent opacity-25">
+//                         </div>
+//                     </a>
+//                 </div>
+//                 <div className="md:w-full flex flex-col justify-center mb-5 mt-3">
+//                     <div className="px-6">
+//                         <a href="#"
+//                             className="mt-1 font-medium text-xl inline-block hover:text-red-900 transition duration-500 ease-in-out my-2">
+//                                 {language == "it" ?
+//                                     `${activeStopOver['ITA_MAIN PLACE']} (${activeStopOver['ITA_STOPOVER']})` :
+//                                     `${activeStopOver['MAIN PLACE']} (${activeStopOver['STOPOVER']})`
+//                                 }
+//                             </a>
+                    
+
+//                         <div className="text-xs bg-gray-100 px-4 py-1 w-fit text-black border border-cyan-900 mb-4 ml-[-5px] rounded-2xl" 
+//                             // style={{ backgroundColor:(VoyageColors[activeStopOver['VOYAGE VARIANTS']] || "gray")}}
+//                         >
+//                             <p className='span-1'>{activeStopOver['VOYAGE VARIANTS']}</p>
+//                         </div>
+
+//                         <p className="text-gray-500 text-sm font-bold my-1">
+//                             Arrival: <span className="text-rose-900">17/03/1857</span>
+//                         </p>
+//                         <hr className="border-gray-300 my-2"/>
+//                         <p className="text-gray-500 text-sm font-bold my-1">
+//                             Departure: <span className="text-rose-900">31/03/1857</span>
+//                         </p>
+//                         <hr className="border-gray-300 my-2"/>
+//                         <p className="text-gray-500 text-sm font-bold">
+//                             Duration of stay (days): <span className="text-rose-900">15</span>
+//                         </p>
+
+//                     </div>
+//                 </div>
+//             </div>
+//         </Card>
+        
+//     </Popup>}
