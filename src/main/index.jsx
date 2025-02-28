@@ -1038,7 +1038,7 @@ const DetailTab = ({ setActiveTab, setShowDetailTab, data, activeTab, setActiveI
                         <span className="font-semibold capitalize">{t('details')} ({data.length})</span>
                     </div>
 
-                    <button className="zoom-in fixed cursor-pointer rounded-full border-[#E9E4D8] border-[5px] mx-2 p-1 bg-[#AD9A6D] text-[#E9E4D8]" onClick={() => setShowDetailTab(false)}>
+                    <button className="zoom-in cursor-pointer rounded-full border-[#E9E4D8] border-[5px] mx-2 p-1 bg-[#AD9A6D] text-[#E9E4D8]" onClick={() => setShowDetailTab(false)}>
                         <X size={22}/>
                     </button>
                 </div>
