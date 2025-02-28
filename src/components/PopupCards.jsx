@@ -195,7 +195,7 @@ const DocumentCard = ({ info }) => {
         return info[ language == "it" ? `ITA_${colName}` : colName] || info[colName];
     }
 
-    // console.log(info);
+    console.log(info);
     return (
     <div className="h-full min-w-[300px] w-full">
         <div className="w-full h-[200px] relative" style={{ background: (!info['IMAGE'] || imgErr) ? '#d3d3d3' : '#fff' }}>
@@ -214,7 +214,7 @@ const DocumentCard = ({ info }) => {
                 <a href="#"
                     className="mt-1 font-medium text-xl inline-block hover:text-red-900 transition duration-500 ease-in-out my-2"
                 >
-                    {getValue("TITLE / NAME") }
+                    {info["TITLE / NAME"] }
                     {/* [Ludwig Christian]<br></br>Eduard von Laemmert */}
                 </a>
                 

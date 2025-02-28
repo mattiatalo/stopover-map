@@ -1,13 +1,19 @@
+/* eslint-disable react/prop-types */
 
 "use client";
 
 import { Navbar } from "flowbite-react";
-import { CloudLightning, Layers, Map, MapPin, Menu, Search } from "lucide-react";
 import LanguageDiv from "./LanguageDiv";
 import { useLocalization } from "./LocalizationProvider";
+import { RiInformation2Line } from "@remixicon/react";
 
-export function SimpleNavbar() {
+export function SimpleNavbar({ toggleModal }) {
   const { language } = useLocalization();
+  
+  const handleClick = (e) => {
+    e.preventDefault();
+    toggleModal();
+  }
 
   return (
     <Navbar fluid className="p-3 shadow-md bg-[#191919] z-[80] w-full">
@@ -31,43 +37,9 @@ export function SimpleNavbar() {
       </div>
       <Navbar.Toggle />
       <Navbar.Collapse>
-        <div className="button-list flex space-x-4 hidden">
-          <button className="rounded-full shadow-round p-3 hover:bg-gray-100 shadow-lg">
-            <Menu  color="#1A56AE" size={25}/>
-          </button>
-
-          <button className="rounded-full shadow-round p-3 hover:bg-gray-100">
-            <Layers  color="#1A56AE" size={25}/>
-          </button>
-
-          <button className="rounded-full shadow-round p-3 hover:bg-gray-100">
-            <Map  color="#1A56AE" size={25}/>
-          </button>
-
-          <button className="rounded-full shadow-round p-3 hover:bg-gray-100">
-            <MapPin  color="#1A56AE" size={25}/>
-          </button>
-
-          <button className="rounded-full shadow-round p-3 hover:bg-gray-100">
-            <CloudLightning  color="#1A56AE" size={25}/>
-          </button>
-
-          <button className="rounded-full shadow-round p-3 hover:bg-gray-100">
-            <Search  color="#1A56AE" size={25}/>
-          </button>
-
-        </div>
-
-        {/* <Navbar.Link href="#" active>
-          Navigator
-        </Navbar.Link>
-        <Navbar.Link  href="#">
-          About
-        </Navbar.Link>
-        <Navbar.Link href="#">Services</Navbar.Link>
-        <Navbar.Link href="#">Pricing</Navbar.Link>
-        <Navbar.Link href="#">Contact</Navbar.Link> */}
-
+        <a  href="https://globalsearoutes.net/the-project/" onClick={handleClick} className="rounded-full border-[#AD9A6D] border-[1px] zoom-in p-1 px-2">
+          <RiInformation2Line className="text-[#AD9A6D] "/>
+        </a>
         <LanguageDiv />
       </Navbar.Collapse>
 

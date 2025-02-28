@@ -40,7 +40,7 @@ export const StopOverDiv = ({ popupInfo, setActiveItem, setActiveLink, category,
             <div className={`flex w-full px-[2%] py-5 max-h-full text-[#54595f] overflow-y-auto overflow-x-hidden`}>
                 <div className="general-info flex-1 h-full w-full max-w-full text-[#363636] ">
                     {popupInfo['MAIN PLACE'] && <div className="border-b border-gray-300 font-bold w-full text-left text-xl mb-3">
-                        { popupInfo['MAIN PLACE']} ({popupInfo['STOPOVER']})
+                        { language == "it" ? popupInfo['ITA_MAIN PLACE'] : popupInfo['MAIN PLACE']} ({language == "it" ? popupInfo['ITA_STOPOVER'] : popupInfo['STOPOVER']})
                     </div> } 
                     
                     <div className="">
@@ -103,7 +103,7 @@ export const StopOverDiv = ({ popupInfo, setActiveItem, setActiveLink, category,
                         { (popupInfo['QUOTATION'] && popupInfo['QUOTATION'] !== "N. A.") ? <div className="description my-[25px] text-[14px] text-gray-700">
                             <h3 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[18px] w-full capitalize">{t('quotation')}</h3>
                         <div>
-                            {(popupInfo['QUOTATION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
+                            {(language == "it" ?  (popupInfo['ITA_QUOTATION'] || "") : popupInfo['QUOTATION'] || "").split("\n").map((ref,i) => (<p key={`${ref}-${i}`} className="mb-2">{ref}</p>))}
                         </div>
 
                         <hr className='my-3 border-black'/>
@@ -154,7 +154,7 @@ export const PersonsDiv = ({ popupInfo, setActiveItem, setActiveLink, category, 
     let personsName = "";
     personsName += popupInfo['LAST NAME'] == "N. A." ? "" : popupInfo['LAST NAME'];
     personsName += popupInfo['FIRST NAME'] == "N. A." ? "" : ", " + popupInfo['FIRST NAME'];
-
+    console.log(popupInfo);
     return (
         <div className="general-info flex-1 h-full w-full max-w-full text-[#363636]">
                
@@ -245,14 +245,16 @@ export const DocumentsDiv = ({ popupInfo, setActiveItem, setActiveLink, category
   
                 <div className="content h-full">
                     <div className="header-section flex flex-col">
+                        <h2 className="text-[#363636] text-[1.5em] mb-2">
+                            {/* <strong>{popupInfo['ALTERNATIVE TITLE / NAME']}</strong>        */}
+                            <strong>{popupInfo[ language == 'it' ? 'ITA_TITLE / NAME' : 'TITLE / NAME']}</strong>                  
+                        </h2>
 
-                        <h2 className="text-[#363636] text-[1.5em]">
+                        <h2 className="text-[#393939] text-[1.1em]">
                             <strong>{popupInfo['FIRST AUTHOR']}</strong>                       
                         </h2>
 
-                        <h2 className="text-[#393939] text-[1.25em] my-2">
-                            <strong>{popupInfo[ language == 'it' ? 'ITA_TITLE / NAME' : 'TITLE / NAME']}</strong>                       
-                        </h2>
+                        
 
 
                         <div className="px-0 h-auto w-full">
@@ -281,12 +283,12 @@ export const DocumentsDiv = ({ popupInfo, setActiveItem, setActiveLink, category
 
                             {popupInfo['DIGITAL VERSION'] && <div className="flex flex-col text-lg border-b border-[#ad9a6d] gap-2 items-start pt-0 text-sm w-full">
                                 <h4 className="text-title text-[#ad9a6d] font-semibold w-[100px] text-[17px] w-full">{t('Digital version') ||'Digital version'}</h4>
-                                <h5 className="capitalize text-[1.1em] mb-3">
+                                <p className="text-[1.1em] mb-3 overflow-hidden">
                                     { popupInfo['DIGITAL VERSION'] !== "N.A" ? 
-                                        <a href={popupInfo['DIGITAL VERSION']} className='underline  break-words' onClick={onLinkClick}>
-                                            Link 
+                                        <a href={popupInfo['DIGITAL VERSION']} className='underline ' onClick={onLinkClick}>
+                                            <p className="break-all">{popupInfo['DIGITAL VERSION']}</p>
                                         </a> : "N.A"}
-                                    </h5>
+                                    </p>
                             </div> }
 
 
@@ -308,7 +310,7 @@ export const DocumentsDiv = ({ popupInfo, setActiveItem, setActiveLink, category
                     <div className="pb-5 text-[14px] text-gray-700">
   
                       {
-                        (popupInfo['LINKS'] || popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "").split("\n").map((link,i) => (
+                        (popupInfo["RESOURCES LINKS"] || popupInfo['RESOURCES LINK'] || "").split("\n").map((link,i) => (
                           <a className="my-3  break-words" href={link} key={`${link}-${i}`} onClick={onLinkClick}>
                             <span className="underline pointer-events-none">{popupInfo['RESOURCES']}</span>
                           </a>

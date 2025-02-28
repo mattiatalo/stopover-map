@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { ChevronsDown, X } from 'lucide-react';
+import { ChevronRight, ChevronsDown, ChevronsLeft, ChevronsRight, X } from 'lucide-react';
 import { useState } from 'react';
 import classNames from 'classnames';
 
@@ -27,10 +27,10 @@ export default function CollapsibleTab(props) {
     return (
         <div className={`collapse-tab  ${collapseClass} ${!isOpen ? '!w-[50px] !h-12 border-[0px] bg-[transparent] !shadow-none close' : "open"} z-[65]` }>
             <div className={`${togglerClass} ${openClass} group text-white right-0 zoom-in cursor-pointer rounded-full border-[#E9E4D8] border-[5px] mx-0 p-1 bg-[#AD9A6D]`} onClick={() => setIsOpen(!isOpen)}>
-                {isOpen ? <X className='text-[#E9E4D8]' size={22} /> : collapseIcon }
+                {isOpen ? position.includes("left") ? <ChevronsLeft className='text-[#E9E4D8]' size={22} /> : <ChevronsRight className='text-[#E9E4D8]' size={22} />  : collapseIcon }
 
                 {!isOpen && <div id="tooltip-default" role="tooltip" 
-                    className={`absolute top-0 ${position.includes("left") ? 'left-10' : 'right-10' } max-w-40 w-36 z-[30] opacity-0 group-hover:opacity-100 inline-block px-3 py-2 text-sm font-medium text-black transition-opacity duration-300 bg-white rounded-lg shadow-xs  tooltip`}>
+                    className={`absolute top-0 ${position.includes("left") ? 'left-10' : 'right-10' } max-w-40 w-36 z-[32] opacity-0 group-hover:opacity-100 inline-block px-3 py-2 text-sm font-medium text-black transition-opacity duration-300 bg-white rounded-lg shadow-xs  tooltip`}>
                     {props.tooltipTitle || "Tooltip content"}
                     <div className="tooltip-arrow" data-popper-arrow></div>
                 </div> }

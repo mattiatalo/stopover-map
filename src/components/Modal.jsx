@@ -28,7 +28,7 @@ export default function Modal(props) {
     <div 
         id="static-modal" 
         data-modal-backdrop="static" tabIndex="-1" aria-hidden="true"
-        className={`${isOpen ? '' : 'hidden'} overflow-y-auto overflow-x-hidden  bg-black/60 fixed top-0 right-0 left-0 z-[75] justify-center items-center w-full md:inset-0 h-[calc(100vh-1rem)] max-h-full`}
+        className={`${isOpen ? '' : 'hidden'} overflow-y-auto overflow-x-hidden  bg-black/60 fixed top-0 right-0 left-0 z-[68] justify-center items-center w-full md:inset-0 h-[calc(100vh-1rem)] max-h-full`}
     >
         <div className="relative p-4 w-full md:max-w-[80%] max-h-full mx-auto top-10">
         

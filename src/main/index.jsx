@@ -246,27 +246,6 @@ export default function MainPage() {
             return state.allData.filter(entry => entry.category == tableName);
         }
        
-        switch(tableName) {
-          case 'persons':
-            return !activeStopOver ? state.persons : state.persons.filter(person => {
-              return (person['MAIN ENCOUNTER PLACE'] && person['MAIN ENCOUNTER PLACE'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase());
-            });
-        
-          case 'scientific_specimen':
-            return !activeStopOver ? state.scientific_specimen : state.scientific_specimen.filter(inst => inst['MAIN PLACE']).filter(collection => {
-              return (collection['MAIN PLACE'] && collection['MAIN PLACE'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase());
-            })
-          case 'institutions':
-            return !activeStopOver ? state.institutions : state.institutions.filter(inst => inst['Place']).filter(institution => {
-              return (institution['Place'] && institution['Place'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase());
-            })
-          case 'documents':
-            return !activeStopOver ? state.documents : state.documents.filter(doc => doc['TITLE / NAME']).filter(document => {
-              return (document['MAIN COLLECTION PLACE'] && document['MAIN COLLECTION PLACE'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase());
-            })
-          default:
-            return [];
-        }
     }
 
     const { scientific_specimen, stopovers, activeVoyage, allData } = state;
@@ -356,15 +335,17 @@ export default function MainPage() {
         }
     }, [activeItem])
 
-    const groupedStopOvers = targetStopOvers.reduce((a,b) => {
+    const groupedStopOvers = targetStopOvers
+    .sort((a,b) => dayjs(a['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix() - dayjs(b['ARRIVAL DAY'], ['DD/MM/YYYY', 'MMMM YYYY']).unix())
+    .reduce((a,b) => {
         let mainPlace = b['MAIN PLACE'];
-        if(a[mainPlace] && !['Pola', 'MUGGIA'].includes(mainPlace)) {
+        if(a[mainPlace] && !['POLA', 'MUGGIA', 'GIBRALTAR'].includes(mainPlace)) {
             if(a[mainPlace].find(entry => entry['STOPOVER'] == b['STOPOVER'])) {
                 return a;
             }
             a[mainPlace].push(b);
         } else {
-            if(['POLA', 'Muggia'].includes(b['STOPOVER'])) {
+            if(['POLA', 'Muggia', 'Pola', 'Gibraltar'].includes(b['STOPOVER'])) {
                 a[`${mainPlace}-${b.id}`] = [b];
             } else{
                 a[mainPlace] = [b];
@@ -422,7 +403,7 @@ export default function MainPage() {
     }, [activeStopOver, allData, activeLayers]);
     // close and open panels
 
-
+    // console.log(groupedStopOvers);
     // console.log([...new Set(state.stopovers.map(stopover => stopover['ITA_VOYAGE VARIANTS']))]);
     return (
         <MainLayout>
@@ -563,7 +544,7 @@ export default function MainPage() {
                     position="top-right"
                     tooltipTitle={t("about")}
                     collapseIcon={<ChevronsLeft className="text-gray-100" />}
-                    collapseClass="hidden md:block about-tab absolute z-20 right-6 top-16 bg-white w-[450px] h-[400px] overflow-y-auto rounded-[10px] shadow-round border-[0px] border-[#AD9A6D]"
+                    collapseClass="hidden md:block about-tab absolute z-20 right-6 top-16 bg-white w-[450px] h-[400px] overflow-y-aut rounded-[10px] shadow-round border-[0px] border-[#AD9A6D]"
                 >
                     <div className="about-section bg-white text-black p-[20px] h-full overflow-y-auto mt-5">
                         {state.pageIntroInfo ? htmlToReactParser.parse(state.pageIntroInfo[language]) : ""}                        
@@ -865,7 +846,7 @@ export default function MainPage() {
                 <CollapsibleTab
                     position="bottom-left"
                     tooltipTitle={t("summary")}
-                    collapseIcon={<ChevronsRight className="text-gray-500"/>}
+                    collapseIcon={<ChevronsRight className="text-gray-100"/>}
                     collapseClass="summary-cards absolute z-20 left-6 bottom-4  min-w-[40px] min-h-[40px] hidden md:block"
                 >
                     <div className="space-x-0 py-2 flex px-3 bg-white rounded-[25px] shadow-round pl-[20px]">
@@ -977,9 +958,9 @@ const Accordion = ({title, children}) => {
 
     return(
         <div className='accordion w-full'>
-            <button className='w-full flex justify-between bg-gray-0 p-2 rounded-md  relative ml-6 w-[calc(100%-2rem)]' onClick={() => setIsOpen(!isOpen)}>
+            <button className='w-full flex items-center bg-gray-0 p-2 rounded-md  relative ml-6 w-[calc(99%-2rem)]' onClick={() => setIsOpen(!isOpen)}>
                 {title}
-                { isOpen ? <ChevronDown /> : <ChevronUp /> }
+                { isOpen ? <ChevronDown className='mx-[10px]'/> : <ChevronUp className='mx-[10px]'/> }
 
                 <span className="absolute left-[-1px] top-[-5px]  h-[65%] bg-gray-500/50 w-[2px]"></span>
                 <span className="absolute left-[-1px] top-5 bottom-0 h-[60%] bg-gray-500/50 w-[2px]"></span>
@@ -997,6 +978,10 @@ const StopOverCard = ({stopOver, onClick, activeStopOver, setHoverStopover, hove
     const { language } = useLocalization();
 
     let bgColor = voyageColorCards[stopOver['VOYAGE VARIANTS']] || "#dddddd";
+    let timeFrame =  language == "it" ? (stopOver['ITA_ARRIVAL DAY'] || stopOver['ARRIVAL DAY']) : stopOver['ARRIVAL DAY'];
+    timeFrame = timeFrame ? timeFrame + " - ": "";
+    timeFrame += language == "it" ? (stopOver['ITA_DEPARTURE DAY'] || stopOver['DEPARTURE DAY']) : stopOver['DEPARTURE DAY'];
+
     return (
         <li 
             style={{
@@ -1023,13 +1008,9 @@ const StopOverCard = ({stopOver, onClick, activeStopOver, setHoverStopover, hove
                     `${stopOver['ITA_MAIN PLACE']} (${stopOver['ITA_STOPOVER']})` :
                     `${stopOver['MAIN PLACE']} (${stopOver['STOPOVER']})`
                 }
-                {stopOver['ARRIVAL DAY'] && stopOver['ARRIVAL DAY'] !== "N.A." ? <div className='text-[11px] text-gray-400'>
-                    {/* {stopOver['ARRIVAL DAY']} - {stopOver['DEPARTURE DAY']} */}
-                    {
-                        language == "it" ? (stopOver['ITA_ARRIVAL DAY'] || stopOver['ARRIVAL DAY']) : stopOver['ARRIVAL DAY']
-                    } - {
-                        language == "it" ? (stopOver['ITA_DEPARTURE DAY'] || stopOver['DEPARTURE DAY']) : stopOver['DEPARTURE DAY']
-                    }
+                {stopOver['ARRIVAL DAY'] || stopOver['DEPARTURE DAY'] ? <div className='text-[11px] text-gray-400'>
+                  
+                    {timeFrame}
                 </div> : ""}
             </div>                  
         </li>
@@ -1057,7 +1038,7 @@ const DetailTab = ({ setActiveTab, setShowDetailTab, data, activeTab, setActiveI
                         <span className="font-semibold capitalize">{t('details')} ({data.length})</span>
                     </div>
 
-                    <button className="zoom-in cursor-pointer rounded-full border-[#E9E4D8] border-[5px] mx-2 p-1 bg-[#AD9A6D] text-[#E9E4D8]" onClick={() => setShowDetailTab(false)}>
+                    <button className="zoom-in fixed cursor-pointer rounded-full border-[#E9E4D8] border-[5px] mx-2 p-1 bg-[#AD9A6D] text-[#E9E4D8]" onClick={() => setShowDetailTab(false)}>
                         <X size={22}/>
                     </button>
                 </div>
@@ -1172,7 +1153,7 @@ const ScientificCollectionModal = ({ popupInfo, setActiveItem, setActiveLink, se
 
                 <div className="flex items-center w-full justify-between top-0 mb-4">
                     <div className="shadow-md rounded-full border-[2px] border-[#191919] p-1 w-fit w-20 px-3 border-black text-md text-center uppercase">
-                        <span className="font-semibold">{t('specimen')}</span>
+                        <span className="font-semibold">{t('specimens')}</span>
                     </div> 
 
                    
@@ -1448,6 +1429,7 @@ const ActiveItemsCarousel = ({ items, setActiveLink, setActiveItem, activeItem, 
 }
 
 const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOver=false, category, paginationText }) => {
+    const t = useTranslation();
     let colors = {
         "stopovers":"red",
         "persons":"orange",
@@ -1480,8 +1462,8 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
 
                 <div className="flex items-center w-full justify-between top-0 mb-5">
                     <div className="flex justify-start flex-1"> 
-                        { popupInfo.category  && <div className="shadow-md  rounded-full border-[1px] px-2 border-black text-center uppercase" style={{ borderColor: colors[popupInfo.category]}}>
-                            <span className="font-semibold" >{popupInfo.category}</span>
+                        { popupInfo.category  && <div className="shadow-md  rounded-full border-[1px] p-1 px-3 border-black text-center uppercase" style={{ borderColor: colors[popupInfo.category]}}>
+                            <span className="font-semibold" >{t(popupInfo.category)}</span>
                         </div> }
                     </div>
                      
@@ -1490,8 +1472,8 @@ const ActiveItemInfoModal = ({ popupInfo, setActiveItem, setActiveLink, isStopOv
                         <span>{paginationText}</span>
                     </div>
                     
-                    <div className="flex-1 items-end flex justify-end">
-                        <button className="  zoom-in cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
+                    <div className="flex-1 items-end flex justify-end relative">
+                        <button className="static top-0 zoom-in cursor-pointer rounded-full border-white border-[5px] p-1 bg-black text-white" onClick={() => setActiveItem(null)}>
                             <X size={24} className='font-bold text-white' fontWeight={900}/>
                         </button>
                     </div>
