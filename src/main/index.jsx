@@ -423,9 +423,10 @@ export default function MainPage() {
                 </div>    
             </div>}
              {activeImage && <ImageViewer imageUrl={activeImage} alt="" className='rounded-md w-full object-cover h-full z-[70]' showImage={false} onClose={() => setActiveImage(null)} />}
+           
             <div className="map-container relative flex w-full">
            
-
+    
              <nav className="flex w-full absolute top-0 left-0 z-[68] bg-white items-center justify-center" aria-label="Breadcrumb">
                  <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse p-2">
                         <li className="inline-flex items-center">
@@ -471,7 +472,7 @@ export default function MainPage() {
 
                         <div className="relative bg-white flex">
                             {
-                                ["institutions", "persons", "scientific_specimen", "documents"].map((item)  => {
+                                [ "persons", "institutions", "scientific_specimen", "documents"].map((item)  => {
                                     let label = item.split("_")[1] || item;
                                     return (
                                         <div className="flex w-full" key={item}>
@@ -544,7 +545,7 @@ export default function MainPage() {
                     position="top-right"
                     tooltipTitle={t("about")}
                     collapseIcon={<ChevronsLeft className="text-gray-100" />}
-                    collapseClass="hidden md:block about-tab absolute z-20 right-6 top-16 bg-white w-[450px] h-[400px] overflow-y-aut rounded-[10px] shadow-round border-[0px] border-[#AD9A6D]"
+                    collapseClass="hidden md:block about-tab absolute z-20 right-6 top-16 bg-white w-[450px] h-[400px] overflow-y-auto rounded-[10px] shadow-round border-[0px] border-[#AD9A6D]"
                 >
                     <div className="about-section bg-white text-black p-[20px] h-full overflow-y-auto mt-5">
                         {state.pageIntroInfo ? htmlToReactParser.parse(state.pageIntroInfo[language]) : ""}                        
@@ -849,7 +850,41 @@ export default function MainPage() {
                     collapseIcon={<ChevronsRight className="text-gray-100"/>}
                     collapseClass="summary-cards absolute z-20 left-6 bottom-4  min-w-[40px] min-h-[40px] hidden md:block"
                 >
-                    <div className="space-x-0 py-2 flex px-3 bg-white rounded-[25px] shadow-round pl-[20px]">
+                    <div className="space-x-0 py-2 flex px-3 bg-white rounded-[25px] shadow-round pl-[50px]">
+
+                    <div className="tab flex items-center px-1 border-l cursor-pointer" onClick={() => {setIsSummaryClick(true); setActiveTable('persons');}}>
+                        <div className="icon mx-1">
+                            <Users size={20} color="orange" />
+                        </div>
+                        <div className="count flex flex-col items-center">
+                            <span className="text-xs text-gray-500 font-semibold mb-[-5px] capitalize">{t('persons')}</span>
+                            <span className="text-xl font-bold text-gray-900 text-center w-full">
+                            { activeStopOver ? 
+                                state.persons.filter(person => (person['MAIN ENCOUNTER PLACE'] && person['MAIN ENCOUNTER PLACE'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase()) ).length :
+                                state.persons.length
+                            }
+                            </span>
+                        </div>
+                    </div>           
+
+                    <div className="tab flex items-center px-1 border-l cursor-pointer" onClick={() => {setIsSummaryClick(true); setActiveTable('institutions');}}>
+                        <div className="icon mx-1">
+                            <School size={20} color="gray" />
+                        </div>
+                        <div className="count flex flex-col items-center justify-between">
+                        <span className="text-xs text-gray-500 font-semibold mb-[-5px] capitalize">{t('institutions')}</span>
+                        <div className="text-xl font-bold text-gray-900 text-center w-full">
+                            {
+                            activeStopOver ?
+                            state.institutions.filter(institution => institution['INSTITUTION NAME']).filter(institution => {
+                                return (institution['MAIN PLACE'] && institution['MAIN PLACE'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase());
+                            }).length
+                            : state.institutions.filter(instiution => instiution['INSTITUTION NAME']).length
+                            }
+                        </div>
+                        </div>
+                    </div>
+         
                     <div className="tab flex items-center px-1 cursor-pointer ml-8" onClick={() => {setIsSummaryClick(true); setActiveTable('scientific_specimen');}}>
                         <div className="icon mx-1">
                             <Bird size={20} color="#4AB46C"/>
@@ -886,38 +921,8 @@ export default function MainPage() {
                         </div>
                     </div>
 
-                    <div className="tab flex items-center px-1 border-l cursor-pointer" onClick={() => {setIsSummaryClick(true); setActiveTable('institutions');}}>
-                        <div className="icon mx-1">
-                            <School size={20} color="gray" />
-                        </div>
-                        <div className="count flex flex-col items-center justify-between">
-                        <span className="text-xs text-gray-500 font-semibold mb-[-5px] capitalize">{t('institutions')}</span>
-                        <div className="text-xl font-bold text-gray-900 text-center w-full">
-                            {
-                            activeStopOver ?
-                            state.institutions.filter(institution => institution['INSTITUTION NAME']).filter(institution => {
-                                return (institution['MAIN PLACE'] && institution['MAIN PLACE'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase());
-                            }).length
-                            : state.institutions.filter(instiution => instiution['INSTITUTION NAME']).length
-                            }
-                        </div>
-                        </div>
-                    </div>
 
-                    <div className="tab flex items-center px-1 border-l cursor-pointer" onClick={() => {setIsSummaryClick(true); setActiveTable('persons');}}>
-                        <div className="icon mx-1">
-                            <Users size={20} color="orange" />
-                        </div>
-                        <div className="count flex flex-col items-center">
-                            <span className="text-xs text-gray-500 font-semibold mb-[-5px] capitalize">{t('persons')}</span>
-                            <span className="text-xl font-bold text-gray-900 text-center w-full">
-                            { activeStopOver ? 
-                                state.persons.filter(person => (person['MAIN ENCOUNTER PLACE'] && person['MAIN ENCOUNTER PLACE'].toLocaleLowerCase() == activeStopOver['MAIN PLACE'].toLocaleLowerCase()) ).length :
-                                state.persons.length
-                            }
-                            </span>
-                        </div>
-                    </div>
+
                     </div>
                     
                 </CollapsibleTab>
